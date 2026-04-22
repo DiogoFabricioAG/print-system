@@ -73,10 +73,33 @@ function mapSaleToIncomeData(sales: Sale[]) {
   return result
 }
 
-function mapClientData(clients: Client[]) {
+function mapClientData(clients: Client[], sales: Sale[]) {
+  // Count how many sales each client has
+  const salesPerClient: Record<number, number> = {}
+  sales.forEach(sale => {
+    if (!salesPerClient[sale.cliente_id]) {
+      salesPerClient[sale.cliente_id] = 0
+    }
+    salesPerClient[sale.cliente_id]++
+  })
+
+  // Recurrentes: clients with more than 1 sale
+  // Nuevos: clients with only 1 sale or no sales
+  let recurrentes = 0
+  let nuevos = 0
+
+  clients.forEach(client => {
+    const saleCount = salesPerClient[client.id] || 0
+    if (saleCount > 1) {
+      recurrentes++
+    } else {
+      nuevos++
+    }
+  })
+
   return [
-    { type: "Nuevos", count: clients.length, fill: "#30b7ff" },
-    { type: "Recurrentes", count: 0, fill: "#34d1bf" }
+    { type: "Nuevos", count: nuevos, fill: "#30b7ff" },
+    { type: "Recurrentes", count: recurrentes, fill: "#34d1bf" }
   ]
 }
 
@@ -93,7 +116,7 @@ const { unpaidSales, incomeData, clientData } = await (async () => {
       .map(mapSaleToViewModel)
 
     const income = mapSaleToIncomeData(sales)
-    const clientsData = mapClientData(clients)
+    const clientsData = mapClientData(clients, sales)
 
     return { 
       unpaidSales: unpaid, 
