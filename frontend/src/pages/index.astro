@@ -5,7 +5,6 @@ import { NavigationPanel } from '../components/dashboard/NavigationPanel';
 import { UnpaidSalesCarousel } from '../components/dashboard/UnpaidSalesCarousel';
 import { IncomeBarChart } from '../components/dashboard/IncomeBarChart';
 import { ClientsPieChart } from '../components/dashboard/ClientsPieChart';
-import { mockUser } from '../data/mock';
 import { salesApi, clientsApi, type Sale, type Client } from '../lib/api';
 
 function mapSaleToViewModel(sale: Sale) {
@@ -123,7 +122,7 @@ const { unpaidSales, incomeData, clientData } = await (async () => {
 
 <Layout title="Dashboard Comercial" showSidebar={false}>
   <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
-    <Topbar userName={mockUser.name} client:load />
+    <Topbar client:load />
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
       <div class="lg:col-span-4 xl:col-span-3 flex flex-col min-h-[220px]">

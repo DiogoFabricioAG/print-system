@@ -2,14 +2,13 @@
 import Layout from '../layouts/Layout.astro';
 import { Topbar } from '../components/dashboard/Topbar';
 import { SellsView } from '../components/sells/SellsView';
-import { mockUser } from '../data/mock';
 ---
 
 <Layout title="Ventas | Print System" showSidebar={false}>
   <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
     
     {/* Header / Topbar */}
-    <Topbar inHomePage={false} userName={mockUser.name} client:load />
+    <Topbar inHomePage={false} client:load />
 
     {/* Vista Principal de Ventas */}
     <div class="mt-8">
