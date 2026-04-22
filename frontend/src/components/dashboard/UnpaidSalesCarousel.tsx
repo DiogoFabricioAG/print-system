@@ -53,7 +53,7 @@ export function UnpaidSalesCarousel({ sales = [] }: UnpaidSalesCarouselProps) {
     <Card className="h-full border-slate-200 shadow-sm bg-white flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold text-slate-800">
-          Ventas sin Cobrar
+          Ultimas Ventas
         </CardTitle>
         <CardDescription className="text-xs text-slate-500">
           Acciones pendientes de pago
@@ -65,9 +65,9 @@ export function UnpaidSalesCarousel({ sales = [] }: UnpaidSalesCarouselProps) {
             {displaySales.map((sale) => (
               <CarouselItem
                 key={sale.id}
-                className="pl-4 md:basis-1/2 lg:basis-1/3"
+                className="pl-4 select-none md:basis-1/2 lg:basis-1/3"
               >
-                <div className="flex flex-col justify-between p-4 border border-slate-200 bg-slate-50/50 rounded-xl h-32 hover:border-[#30b7ff]/40 hover:shadow-sm transition-all group">
+                <div className="flex flex-col  justify-between p-4 border border-slate-200 bg-slate-50/50 rounded-xl h-32 hover:border-[#30b7ff]/40 hover:shadow-sm transition-all group">
                   <div className="flex justify-between items-start gap-2">
                     <span className="font-semibold text-slate-700 text-sm truncate group-hover:text-slate-900">
                       {sale.client}
