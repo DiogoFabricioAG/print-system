@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { ClientAutocomplete } from "@/components/ui/client-autocomplete"
 import type { Client } from "@/lib/api"
 
 interface RegisterSellModalProps {
@@ -30,17 +31,25 @@ interface RegisterSellModalProps {
 
 export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: RegisterSellModalProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null)
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setSelectedClientId(null)
+    }
+  }, [isOpen])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!selectedClientId) return
+    
     setIsSubmitting(true)
     
     const formData = new FormData(e.currentTarget)
-    const clienteId = Number(formData.get("cliente_id"))
     
     const data = {
       diseno: formData.get("diseno") as string,
-      cliente_id: clienteId,
+      cliente_id: selectedClientId,
       pago: Number(formData.get("pago")),
       cantidad: formData.get("cantidad") as string || undefined,
       metro_total: formData.get("metro_total") ? Number(formData.get("metro_total")) : undefined,
@@ -80,20 +89,14 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cliente_id" className="text-slate-700 font-semibold">Cliente</Label>
-                <select 
-                  id="cliente_id" 
-                  name="cliente_id"
-                  required
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.nombre}
-                    </option>
-                  ))}
-                </select>
+                <Label className="text-slate-700 font-semibold">Cliente</Label>
+                <ClientAutocomplete
+                  clients={clients}
+                  value={selectedClientId}
+                  onChange={setSelectedClientId}
+                  placeholder="Buscar cliente..."
+                />
+                <input type="hidden" name="cliente_id" value={selectedClientId || ""} />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
@@ -184,7 +187,7 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
             <Button 
               type="submit"
               className="rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white shadow-sm"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedClientId}
             >
               {isSubmitting ? "Registrando..." : "Registrar"}
             </Button>
