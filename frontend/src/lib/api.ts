@@ -18,6 +18,11 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   return data.data
 }
 
+export interface User {
+  id: number
+  username: string
+}
+
 export interface Client {
   id: number
   nombre: string
@@ -38,6 +43,24 @@ export interface Sale {
   estado: string
   nota: string
   creado_el: string
+}
+
+export const authApi = {
+  login: async (username: string, password: string): Promise<User> => {
+    const response = await fetch(`${API_BASE}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+    
+    const data = await response.json()
+    
+    if (!data.success) {
+      throw new Error(data.error || "Error desconocido")
+    }
+    
+    return data.data
+  },
 }
 
 export const clientsApi = {

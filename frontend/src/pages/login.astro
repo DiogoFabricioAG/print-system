@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { authApi } from '@/lib/api';
+import { setUser } from '@/lib/auth';
 ---
 
 <Layout title="Iniciar Sesión" showSidebar={false}>
@@ -15,8 +17,8 @@ import { Button } from "@/components/ui/button";
           <CardDescription className="text-slate-500 text-xs">Ingresa tus credenciales</CardDescription>
         </CardHeader>
         <CardContent className="pt-2">
-          <form class="space-y-3">
-            <div class="space-y-1">
+          <form id="login-form" className="space-y-3">
+            <div className="space-y-1">
               <Label htmlFor="username" className="text-slate-700 text-xs font-medium">Usuario</Label>
               <Input 
                 id="username" 
@@ -27,7 +29,7 @@ import { Button } from "@/components/ui/button";
               />
             </div>
 
-            <div class="space-y-1">
+            <div className="space-y-1">
               <Label htmlFor="password" className="text-slate-700 text-xs font-medium">Contraseña</Label>
               <Input 
                 id="password" 
@@ -38,9 +40,11 @@ import { Button } from "@/components/ui/button";
               />
             </div>
 
+            <p id="error-msg" className="text-xs text-red-500 hidden"></p>
+
             <Button 
               type="submit" 
-              className="w-full mt-2 h-8 rounded-lg bg-[#30b7ff] hover:bg-[#209fdf] text-white text-xs font-medium"
+              className="w-full h-8 rounded-lg bg-[#30b7ff] hover:bg-[#209fdf] text-white text-xs font-medium"
             >
               Ingresar
             </Button>
@@ -49,4 +53,41 @@ import { Button } from "@/components/ui/button";
       </Card>
     </div>
   </div>
+
+  <script>
+    import { authApi } from '@/lib/api';
+    import { setUser } from '@/lib/auth';
+
+    const form = document.getElementById('login-form') as HTMLFormElement;
+    const errorMsg = document.getElementById('error-msg');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = (document.getElementById('username') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+      
+      // Disable button and show loading
+      if (submitBtn) {
+        submitBtn.textContent = 'Ingresando...';
+        (submitBtn as HTMLButtonElement).disabled = true;
+      }
+      
+      try {
+        const user = await authApi.login(username, password);
+        setUser(user);
+        window.location.href = '/';
+      } catch (error: any) {
+        if (errorMsg) {
+          errorMsg.textContent = error.message || 'Usuario o contraseña incorrectos';
+          errorMsg.classList.remove('hidden');
+        }
+        if (submitBtn) {
+          submitBtn.textContent = 'Ingresar';
+          (submitBtn as HTMLButtonElement).disabled = false;
+        }
+      }
+    });
+  </script>
 </Layout>

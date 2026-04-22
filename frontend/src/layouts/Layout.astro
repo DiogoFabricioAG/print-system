@@ -12,6 +12,7 @@ const { title, showSidebar = true } = Astro.props;
 
 const currentPath = Astro.url.pathname;
 const showAppNav = showSidebar;
+const isLoginPage = currentPath === '/login';
 
 const navItems = [
 	{ name: 'Dashboard', path: '/', short: 'Inicio' },
@@ -31,9 +32,22 @@ const navItems = [
 		<title>{title} | Print System</title>
 		<ClientRouter />
 		<script is:inline>
-			document.addEventListener('astro:page-load', () => {
-				// Re-hydrate React components after navigation
-			});
+			function checkAuth() {
+				const user = localStorage.getItem('printsystem_user');
+				const isLoginPage = window.location.pathname === '/login';
+				
+				if (!user && !isLoginPage) {
+					window.location.href = '/login';
+				} else if (user && isLoginPage) {
+					window.location.href = '/';
+				}
+			}
+			
+			// Check on page load
+			checkAuth();
+			
+			// Listen for astro page loads
+			document.addEventListener('astro:page-load', checkAuth);
 		</script>
 	</head>
 	<body class="min-h-screen overflow-x-hidden bg-cloud text-ink">
@@ -44,7 +58,7 @@ const navItems = [
 		</div>
 
 		<div class={`relative min-h-screen ${showAppNav ? 'md:grid md:grid-cols-[17.5rem_1fr]' : ''}`}>
-			{showAppNav && (
+			{showAppNav && !isLoginPage && (
 				<aside class="hidden border-r border-white/40 bg-ink/95 px-4 pb-6 pt-5 text-white shadow-2xl backdrop-blur md:flex md:flex-col" transition:persist>
 					<a href="/" class="group flex items-center gap-3 px-3" transition:name="brand-lockup">
 						<div class="grid h-10 w-10 place-items-center rounded-xl bg-linear-to-br from-electric to-mint text-ink shadow-lg shadow-electric/25 transition-transform duration-300 group-hover:rotate-6">
@@ -82,23 +96,18 @@ const navItems = [
 					<div class="mt-auto rounded-2xl border border-white/10 bg-white/5 p-4">
 						<p class="text-xs uppercase tracking-[0.2em] text-white/50">Sesion</p>
 						<p class="mt-2 text-sm font-semibold text-white">Admin Comercial</p>
-						<p class="text-xs text-white/60">admin@printsys.com</p>
-						<a href="/login" class="mt-4 inline-flex items-center text-sm font-semibold text-mint transition-colors hover:text-white">Salir</a>
+						<button id="logout-btn" class="mt-4 inline-flex items-center text-sm font-semibold text-mint transition-colors hover:text-white cursor-pointer">Salir</button>
 					</div>
 				</aside>
 			)}
 
 			<main class="relative min-h-screen">
-				{showAppNav && (
+				{showAppNav && !isLoginPage && (
 					<header class="sticky top-0 z-20 border-b border-slate-200/70 bg-white/70 backdrop-blur md:border-none md:bg-transparent" transition:persist>
 						<div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8 md:pt-6">
 							<div>
 								<p class="text-xs uppercase tracking-[0.18em] text-slate-500">Panel comercial</p>
 								<h1 class="font-display text-xl font-bold text-ink">{title}</h1>
-							</div>
-							<div class="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-sm md:flex">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-								Buscar cliente o venta
 							</div>
 						</div>
 					</header>
@@ -110,7 +119,7 @@ const navItems = [
 			</main>
 		</div>
 
-		{showAppNav && (
+		{showAppNav && !isLoginPage && (
 			<nav class="fixed inset-x-4 bottom-4 z-30 flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white/90 p-2 shadow-2xl backdrop-blur md:hidden">
 				{navItems.map((item) => {
 					const isActive = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path));
@@ -127,5 +136,12 @@ const navItems = [
 		)}
 
 		<Toaster client:load />
+		
+		<script is:inline>
+			document.getElementById('logout-btn')?.addEventListener('click', () => {
+				localStorage.removeItem('printsystem_user');
+				window.location.href = '/login';
+			});
+		</script>
 	</body>
 </html>
