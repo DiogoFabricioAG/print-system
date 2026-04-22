@@ -1,0 +1,52 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+---
+
+<Layout title="Iniciar Sesión" showSidebar={false}>
+  <div class="fixed inset-0 flex items-center justify-center">
+    <div class="w-72">
+      <Card className="border-slate-200 shadow-lg bg-white">
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-base font-bold text-slate-900">Bienvenido</CardTitle>
+          <CardDescription className="text-slate-500 text-xs">Ingresa tus credenciales</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <form class="space-y-3">
+            <div class="space-y-1">
+              <Label htmlFor="username" className="text-slate-700 text-xs font-medium">Usuario</Label>
+              <Input 
+                id="username" 
+                type="text" 
+                placeholder="Usuario" 
+                required 
+                className="h-8 rounded-lg border-slate-200 focus-visible:ring-[#30b7ff] text-sm"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <Label htmlFor="password" className="text-slate-700 text-xs font-medium">Contraseña</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                required 
+                className="h-8 rounded-lg border-slate-200 focus-visible:ring-[#30b7ff] text-sm"
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full mt-2 h-8 rounded-lg bg-[#30b7ff] hover:bg-[#209fdf] text-white text-xs font-medium"
+            >
+              Ingresar
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+</Layout>

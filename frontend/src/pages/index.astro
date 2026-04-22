@@ -1,0 +1,150 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Topbar } from '../components/dashboard/Topbar';
+import { NavigationPanel } from '../components/dashboard/NavigationPanel';
+import { UnpaidSalesCarousel } from '../components/dashboard/UnpaidSalesCarousel';
+import { IncomeBarChart } from '../components/dashboard/IncomeBarChart';
+import { ClientsPieChart } from '../components/dashboard/ClientsPieChart';
+import { mockUser } from '../data/mock';
+import { salesApi, clientsApi, type Sale, type Client } from '../lib/api';
+
+function mapSaleToViewModel(sale: Sale) {
+  return {
+    id: String(sale.id),
+    client: sale.cliente_nombre,
+    amount: sale.pago,
+    status: sale.estado,
+    date: sale.creado_el.split(" ")[0]
+  }
+}
+
+function mapSaleToIncomeData(sales: Sale[]) {
+  // Group sales by date
+  const salesByDate: Record<string, number> = {}
+  
+  sales.forEach(sale => {
+    const saleDate = new Date(sale.creado_el)
+    const month = (saleDate.getMonth() + 1).toString().padStart(2, '0')
+    const day = saleDate.getDate().toString().padStart(2, '0')
+    const key = `${day}/${month}`
+    
+    if (!salesByDate[key]) {
+      salesByDate[key] = 0
+    }
+    salesByDate[key] += sale.pago
+  })
+  
+  // Get unique dates from sales
+  const uniqueDates = Object.keys(salesByDate).sort()
+  
+  if (uniqueDates.length === 0) {
+    // No sales - show last 7 days with 0
+    const last7Days: { date: string; income: number }[] = []
+    const today = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const day = date.getDate().toString().padStart(2, '0')
+      last7Days.push({ date: `${day}/${month}`, income: 0 })
+    }
+    return last7Days
+  }
+  
+  // Find the most recent date in sales and generate 7 days from there
+  const sortedDates = [...uniqueDates].sort().reverse()
+  const latestDateStr = sortedDates[0]
+  const [latestDay, latestMonth] = latestDateStr.split('/').map(Number)
+  const latestDate = new Date(2026, latestMonth - 1, parseInt(latestDay))
+  
+  // Generate 7 days ending on the latest date with sales
+  const result: { date: string; income: number }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(latestDate)
+    date.setDate(date.getDate() - i)
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const key = `${day}/${month}`
+    result.push({
+      date: key,
+      income: salesByDate[key] || 0
+    })
+  }
+  
+  return result
+}
+
+function mapClientData(clients: Client[]) {
+  return [
+    { type: "Nuevos", count: clients.length, fill: "#30b7ff" },
+    { type: "Recurrentes", count: 0, fill: "#34d1bf" }
+  ]
+}
+
+const { unpaidSales, incomeData, clientData } = await (async () => {
+  try {
+    const [sales, clients] = await Promise.all([
+      salesApi.getAll(),
+      clientsApi.getAll()
+    ])
+
+    const unpaid = sales
+      .filter(s => s.estado === "Sin Cobrar" || s.estado === "En Producción")
+      .slice(0, 5)
+      .map(mapSaleToViewModel)
+
+    const income = mapSaleToIncomeData(sales)
+    const clientsData = mapClientData(clients)
+
+    return { 
+      unpaidSales: unpaid, 
+      incomeData: income, 
+      clientData: clientsData 
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error)
+    return { 
+      unpaidSales: [], 
+      incomeData: [
+        { date: "17/04", income: 0 },
+        { date: "18/04", income: 0 },
+        { date: "19/04", income: 0 },
+        { date: "20/04", income: 0 },
+        { date: "21/04", income: 0 },
+      ], 
+      clientData: [
+        { type: "Nuevos", count: 0, fill: "#30b7ff" },
+        { type: "Recurrentes", count: 0, fill: "#34d1bf" }
+      ]
+    }
+  }
+})();
+---
+
+<Layout title="Dashboard Comercial" showSidebar={false}>
+  <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
+    <Topbar userName={mockUser.name} client:load />
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+      <div class="lg:col-span-4 xl:col-span-3 flex flex-col min-h-[220px]">
+        <NavigationPanel client:load />
+      </div>
+      
+      <div class="lg:col-span-8 xl:col-span-9 flex flex-col min-h-[220px]">
+        <UnpaidSalesCarousel sales={unpaidSales} client:load />
+      </div>
+
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+      <div class="lg:col-span-8 flex flex-col min-h-[350px]">
+        <IncomeBarChart data={incomeData} client:load />
+      </div>
+
+      <div class="lg:col-span-4 flex flex-col min-h-[350px]">
+        <ClientsPieChart data={clientData} client:load />
+      </div>
+
+    </div>
+  </div>
+</Layout>

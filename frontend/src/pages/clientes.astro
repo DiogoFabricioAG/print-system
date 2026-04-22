@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Topbar } from '../components/dashboard/Topbar';
+import { ClientsView } from '../components/clients/ClientsView';
+import { mockUser } from '../data/mock';
+---
+
+<Layout title="Clientes | Print System" showSidebar={false}>
+  <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
+    
+    {/* Header / Topbar (Reutilizado del Dashboard para consistencia) */}
+    <Topbar inHomePage={false} userName={mockUser.name} client:load />
+
+    {/* Vista Principal de Clientes (Buscador, Tabla y Modales) */}
+    <div class="mt-8">
+      <ClientsView client:load />
+    </div>
+
+  </div>
+</Layout>
