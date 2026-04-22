@@ -46,8 +46,8 @@ export function SellsTable({ sells, onViewSell, onEditSell, currentPage, totalPa
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">Diseño</TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">Cliente</TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">Diseño</TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">Pago</TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">Estado</TableHead>
               <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">Acciones</TableHead>
@@ -56,11 +56,11 @@ export function SellsTable({ sells, onViewSell, onEditSell, currentPage, totalPa
           <TableBody>
             {sells.map((sell) => (
               <TableRow key={sell.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
-                <TableCell className="font-medium text-slate-900 py-4 px-6 max-w-[250px] truncate">
-                  {sell.design}
-                </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6">
+                <TableCell className="font-medium text-slate-900 py-4 px-6">
                   {sell.client}
+                </TableCell>
+                <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
+                  {sell.design}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
                   S/ {sell.amount.toLocaleString('es-PE')}

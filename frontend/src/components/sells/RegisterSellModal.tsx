@@ -96,7 +96,7 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="pago" className="text-slate-700 font-semibold">Monto (S/)</Label>
                   <Input 
@@ -116,6 +116,18 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
                     id="cantidad" 
                     name="cantidad"
                     placeholder="Ej. 100" 
+                    className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="metro_total" className="text-slate-700 font-semibold">Metro Total</Label>
+                  <Input 
+                    id="metro_total" 
+                    name="metro_total"
+                    type="number"
+                    step="0.01"
+                    placeholder="Ej. 2.5" 
                     className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]"
                   />
                 </div>

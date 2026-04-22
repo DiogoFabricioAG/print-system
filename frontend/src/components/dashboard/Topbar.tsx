@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowBigLeftDash, Info, LogOut } from "lucide-react";
+import { ArrowBigLeftDash, Info, LogOut, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 interface TopbarProps {
@@ -25,16 +25,26 @@ export function Topbar({
         <Button
           variant="outline"
           size="icon"
-          className="rounded-xl h-11 w-11 border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+          className="rounded-xl cursor-pointer h-11 w-11 border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
           title="Información del Sistema"
         >
           <Info className="h-5 w-5" />
         </Button>
 
+        <a
+          href="https://docs.google.com/spreadsheets/d/12dk7iA95nKlTA8-84oJt7WhjyzLdkQGNQMScdg-sa8A/edit?pli=1&gid=0#gid=0"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center rounded-xl h-11 w-11 border  text-green-700/80 hover:bg-green-200/20 hover:border-green-400/40  transition-colors"
+          title="Abrir Sheets"
+        >
+          <Table className="h-5 w-5" />
+        </a>
+
         <Button
           variant="outline"
           size="icon"
-          className="rounded-xl h-11 w-11 border-slate-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+          className="rounded-xl cursor-pointer h-11 w-11 border-slate-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
           title={inHomePage ? "Cerrar sesión" : "Volver"}
           onClick={
             inHomePage
