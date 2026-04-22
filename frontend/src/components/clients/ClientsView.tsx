@@ -9,36 +9,23 @@ import { showToast } from "@/lib/toast"
 
 const ITEMS_PER_PAGE = 5
 
-function mapClientToViewModel(client: Client) {
-  return {
-    id: String(client.id),
-    name: client.nombre,
-    phone: client.numero ? String(client.numero) : "",
-    description: client.descripcion || "",
-    totalSalesValue: 0,
-    lastPurchaseDate: client.creado_el.split(" ")[0],
-    daysSinceLastPurchase: 0,
-    hasDebt: false,
-    history: []
-  }
-}
-
 export function ClientsView() {
-  const [clients, setClients] = React.useState<ClientData[]>([])
+  const [clients, setClients] = React.useState<Client[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [selectedClient, setSelectedClient] = React.useState<ClientData | null>(null)
+  const [selectedClientId, setSelectedClientId] = React.useState<string | null>(null)
   
   const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [editingClient, setEditingClient] = React.useState<Client | null>(null)
 
   const fetchClients = React.useCallback(async () => {
     try {
       setLoading(true)
       const data = await clientsApi.getAll()
-      setClients(data.map(mapClientToViewModel))
+      setClients(data)
     } catch (error) {
       showToast.error("Error al cargar clientes")
       console.error(error)
@@ -54,16 +41,32 @@ export function ClientsView() {
   const filteredClients = React.useMemo(() => {
     if (!searchTerm) return clients
     return clients.filter(client => 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm)
+      client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(client.numero).includes(searchTerm)
     )
   }, [clients, searchTerm])
 
-  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE)
+  const clientViewModels = React.useMemo(() => {
+    return filteredClients.map(client => ({
+      id: String(client.id),
+      name: client.nombre,
+      phone: client.numero ? String(client.numero) : "",
+      description: client.descripcion || "",
+      metrics: {
+        totalSalesValue: 0,
+        lastPurchaseDate: "",
+        daysSinceLastPurchase: 0,
+        hasDebt: false
+      },
+      history: []
+    }))
+  }, [filteredClients])
+
+  const totalPages = Math.ceil(clientViewModels.length / ITEMS_PER_PAGE)
   const paginatedClients = React.useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredClients.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredClients, currentPage])
+    return clientViewModels.slice(start, start + ITEMS_PER_PAGE)
+  }, [clientViewModels, currentPage])
 
   React.useEffect(() => {
     setCurrentPage(1)
@@ -73,23 +76,54 @@ export function ClientsView() {
   }, [searchTerm])
 
   const handleViewClient = (client: ClientData) => {
-    setSelectedClient(client)
+    setSelectedClientId(client.id)
     setIsDetailModalOpen(true)
   }
 
   const handleEditClient = (client: ClientData) => {
-    setSelectedClient(client)
-    setIsEditModalOpen(true)
+    const originalClient = clients.find(c => String(c.id) === client.id)
+    if (originalClient) {
+      setEditingClient(originalClient)
+      setIsEditModalOpen(true)
+    }
   }
 
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false)
-    setTimeout(() => setSelectedClient(null), 300)
+    setTimeout(() => setSelectedClientId(null), 300)
   }
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
-    setTimeout(() => setSelectedClient(null), 300)
+    setTimeout(() => setEditingClient(null), 300)
+  }
+
+  const handleRequestClientData = async (clientId: string) => {
+    try {
+      const detail = await clientsApi.getDetail(Number(clientId))
+      return {
+        id: String(detail.id),
+        name: detail.nombre,
+        phone: detail.numero ? String(detail.numero) : "",
+        description: detail.descripcion || "",
+        metrics: {
+          totalSalesValue: detail.metricas.total_ventas,
+          lastPurchaseDate: detail.metricas.ultima_compra,
+          daysSinceLastPurchase: detail.metricas.dias_desde_ultima_compra,
+          hasDebt: detail.metricas.debe
+        },
+        history: detail.historial.map(h => ({
+          id: String(h.id),
+          product: h.diseno,
+          amount: h.pago,
+          date: h.fecha
+        }))
+      }
+    } catch (error) {
+      showToast.error("Error al cargar datos del cliente")
+      console.error(error)
+      return null
+    }
   }
 
   const handleRegisterSuccess = async (data: { nombre: string; numero?: number; descripcion?: string }) => {
@@ -104,11 +138,11 @@ export function ClientsView() {
   }
 
   const handleEditSuccess = async (data: { nombre: string; numero?: number; descripcion?: string }) => {
-    if (!selectedClient) return
+    if (!editingClient) return
     try {
-      await clientsApi.update(Number(selectedClient.id), data)
+      await clientsApi.update(Number(editingClient.id), data)
       setIsEditModalOpen(false)
-      setSelectedClient(null)
+      setEditingClient(null)
       showToast.success("Cliente actualizado correctamente")
       fetchClients()
     } catch (error) {
@@ -141,9 +175,10 @@ export function ClientsView() {
       />
 
       <ClientDetailModal 
-        client={selectedClient} 
+        clientId={selectedClientId} 
         isOpen={isDetailModalOpen} 
-        onClose={handleCloseDetailModal} 
+        onClose={handleCloseDetailModal}
+        onRequestData={handleRequestClientData}
       />
 
       <RegisterClientModal 
@@ -153,7 +188,12 @@ export function ClientsView() {
       />
 
       <EditClientModal 
-        client={selectedClient} 
+        client={editingClient ? {
+          id: String(editingClient.id),
+          nombre: editingClient.nombre,
+          numero: editingClient.numero,
+          descripcion: editingClient.descripcion
+        } : null} 
         isOpen={isEditModalOpen} 
         onClose={handleCloseEditModal}
         onSuccess={handleEditSuccess}

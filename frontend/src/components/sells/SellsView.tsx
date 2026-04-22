@@ -4,6 +4,7 @@ import { SellsTable, type SellData } from "./SellsTable"
 import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
+import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { salesApi, clientsApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 
@@ -39,6 +40,18 @@ export function SellsView() {
   const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false)
+  const [pendingSellData, setPendingSellData] = React.useState<{
+    diseno: string
+    cliente_id: number
+    pago: number
+    cantidad?: string
+    metro_total?: number
+    maquina?: string
+    estado?: string
+    nota?: string
+  } | null>(null)
+  const [isEditing, setIsEditing] = React.useState(false)
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -137,7 +150,7 @@ export function SellsView() {
     setHasFiltered(true)
   }
 
-  const handleRegisterSuccess = async (data: {
+  const handleRegisterClick = (data: {
     diseno: string
     cliente_id: number
     pago: number
@@ -147,36 +160,50 @@ export function SellsView() {
     estado?: string
     nota?: string
   }) => {
+    setPendingSellData(data)
+    setIsEditing(false)
+    setIsConfirmModalOpen(true)
+  }
+
+  const handleEditClick = (data: {
+    diseno: string
+    cliente_id: number
+    pago: number
+    cantidad?: string
+    metro_total?: number
+    maquina?: string
+    estado?: string
+    nota?: string
+  }) => {
+    setPendingSellData(data)
+    setIsEditing(true)
+    setIsConfirmModalOpen(true)
+  }
+
+  const handleConfirmSubmit = async () => {
+    if (!pendingSellData) return
     try {
-      await salesApi.create(data)
-      setIsRegisterModalOpen(false)
-      showToast.success("Venta registrada correctamente")
+      if (isEditing) {
+        await salesApi.update(Number(selectedSell?.id), pendingSellData)
+        setIsEditModalOpen(false)
+        setSelectedSell(null)
+        showToast.success("Venta actualizada correctamente")
+      } else {
+        await salesApi.create(pendingSellData)
+        setIsRegisterModalOpen(false)
+        showToast.success("Venta registrada correctamente")
+      }
+      setIsConfirmModalOpen(false)
+      setPendingSellData(null)
       fetchData()
     } catch (error) {
-      showToast.error("Error al registrar venta")
+      showToast.error(`Error al ${isEditing ? 'actualizar' : 'registrar'} venta`)
     }
   }
 
-  const handleEditSuccess = async (data: {
-    diseno: string
-    cliente_id: number
-    pago: number
-    cantidad?: string
-    metro_total?: number
-    maquina?: string
-    estado?: string
-    nota?: string
-  }) => {
-    if (!selectedSell) return
-    try {
-      await salesApi.update(Number(selectedSell.id), data)
-      setIsEditModalOpen(false)
-      setSelectedSell(null)
-      showToast.success("Venta actualizada correctamente")
-      fetchData()
-    } catch (error) {
-      showToast.error("Error al actualizar venta")
-    }
+  const handleConfirmClose = () => {
+    setIsConfirmModalOpen(false)
+    setPendingSellData(null)
   }
 
   if (loading) {
@@ -217,18 +244,27 @@ export function SellsView() {
         onClose={handleCloseDetailModal} 
       />
 
+      <RegisterSellModal 
+        isOpen={isRegisterModalOpen} 
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSuccess={handleRegisterClick}
+        clients={clients}
+      />
+
       <EditSellModal 
         sell={selectedSell} 
         isOpen={isEditModalOpen} 
         onClose={handleCloseEditModal}
-        onSuccess={handleEditSuccess}
+        onSuccess={handleEditClick}
       />
 
-      <RegisterSellModal 
-        isOpen={isRegisterModalOpen} 
-        onClose={() => setIsRegisterModalOpen(false)}
-        onSuccess={handleRegisterSuccess}
-        clients={clients}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleConfirmClose}
+        onConfirm={handleConfirmSubmit}
+        title={isEditing ? "¿Actualizar venta?" : "¿Registrar venta?"}
+        message={isEditing ? "¿Estás seguro de que deseas actualizar esta venta?" : "¿Estás seguro de que deseas registrar esta venta?"}
+        confirmText={isEditing ? "Sí, actualizar" : "Sí, registrar"}
       />
     </div>
   )

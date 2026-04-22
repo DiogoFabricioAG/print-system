@@ -45,6 +45,26 @@ export interface Sale {
   creado_el: string
 }
 
+export interface ClientDetail {
+  id: number
+  nombre: string
+  numero: number
+  descripcion: string
+  creado_el: string
+  metricas: {
+    total_ventas: number
+    ultima_compra: string
+    dias_desde_ultima_compra: number
+    debe: boolean
+  }
+  historial: Array<{
+    id: number
+    diseno: string
+    pago: number
+    fecha: string
+  }>
+}
+
 export const authApi = {
   login: async (username: string, password: string): Promise<User> => {
     const response = await fetch(`${API_BASE}/login`, {
@@ -66,6 +86,7 @@ export const authApi = {
 export const clientsApi = {
   getAll: () => fetchApi<Client[]>("/clientes"),
   getById: (id: number) => fetchApi<Client>(`/clientes/${id}`),
+  getDetail: (id: number) => fetchApi<ClientDetail>(`/clientes/${id}/detalle`),
   create: (data: { nombre: string; numero?: number; descripcion?: string }) =>
     fetchApi<Client>("/clientes", {
       method: "POST",

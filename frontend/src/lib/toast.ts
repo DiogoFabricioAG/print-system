@@ -12,7 +12,6 @@ export const showToast = {
         padding: "16px 20px",
         minWidth: "280px",
       },
-      duration: 4000,
     })
   },
   error: (message: string) => {
@@ -26,7 +25,6 @@ export const showToast = {
         padding: "16px 20px",
         minWidth: "280px",
       },
-      duration: 4000,
     })
   },
   info: (message: string) => {
@@ -40,7 +38,6 @@ export const showToast = {
         padding: "16px 20px",
         minWidth: "280px",
       },
-      duration: 4000,
     })
   },
 }

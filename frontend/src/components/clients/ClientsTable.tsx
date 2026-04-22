@@ -25,11 +25,11 @@ export function ClientsTable({ clients, onViewClient, onEditClient, currentPage,
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+<TableHeader className="bg-slate-50/50">
             <TableRow className="border-slate-200 hover:bg-transparent">
               <TableHead className="w-[300px] font-semibold text-slate-700 py-4 px-6">Nombre</TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">Teléfono</TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">Última Compra</TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">Telefono</TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">Ultima Compra</TableHead>
               <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -43,7 +43,7 @@ export function ClientsTable({ clients, onViewClient, onEditClient, currentPage,
                   {client.phone}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums">
-                  {new Date(client.lastPurchaseDate).toLocaleDateString('es-ES')}
+                  -
                 </TableCell>
                 <TableCell className="text-right py-4 px-6">
                   <div className="flex justify-end gap-2">

@@ -7,6 +7,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       className="toaster group"
       position="bottom-center"
+      expand
+      transition={{
+        from: "bottom",
+        to: "bottom",
+        bounce: 0.2,
+      }}
       toastOptions={{
         classNames: {
           toast:
