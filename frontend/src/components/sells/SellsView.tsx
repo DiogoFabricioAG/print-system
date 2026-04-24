@@ -20,9 +20,11 @@ function mapSaleToViewModel(sale: Sale): SellData {
     id: String(sale.id),
     design: sale.diseno,
     client: sale.cliente_nombre,
+    clientId: sale.cliente_id,
     amount: sale.pago,
     status: sale.estado,
-    date: sale.creado_el.split(" ")[0]
+    date: sale.creado_el.split(" ")[0],
+    nota: sale.nota
   }
 }
 
@@ -249,6 +251,9 @@ export function SellsView() {
         onClose={() => setIsRegisterModalOpen(false)}
         onSuccess={handleRegisterClick}
         clients={clients}
+        onClientAdded={(newClient) => {
+          setClients(prev => [...prev, newClient])
+        }}
       />
 
       <EditSellModal 

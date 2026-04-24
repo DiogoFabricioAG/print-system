@@ -27,9 +27,10 @@ interface RegisterSellModalProps {
     nota?: string
   }) => void;
   clients: Client[];
+  onClientAdded?: (client: Client) => void;
 }
 
-export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: RegisterSellModalProps) {
+export function RegisterSellModal({ isOpen, onClose, onSuccess, clients, onClientAdded }: RegisterSellModalProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null)
 
@@ -54,7 +55,7 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
       cantidad: formData.get("cantidad") as string || undefined,
       metro_total: formData.get("metro_total") ? Number(formData.get("metro_total")) : undefined,
       maquina: formData.get("maquina") as string || undefined,
-      estado: formData.get("estado") as string || "Sin Cobrar",
+      estado: formData.get("estado") as string || "Debe",
       nota: formData.get("nota") as string || undefined,
     }
 
@@ -95,6 +96,7 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
                   value={selectedClientId}
                   onChange={setSelectedClientId}
                   placeholder="Buscar cliente..."
+                  onClientAdded={onClientAdded}
                 />
                 <input type="hidden" name="cliente_id" value={selectedClientId || ""} />
               </div>
@@ -153,10 +155,10 @@ export function RegisterSellModal({ isOpen, onClose, onSuccess, clients }: Regis
                     id="estado" 
                     name="estado"
                     className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
+                    defaultValue="Debe"
                   >
-                    <option value="Sin Cobrar">Sin Cobrar</option>
+                    <option value="Debe">Debe</option>
                     <option value="En Producción">En Producción</option>
-                    <option value="Completado">Completado</option>
                     <option value="Cancelado">Cancelado</option>
                   </select>
                 </div>

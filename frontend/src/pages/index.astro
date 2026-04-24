@@ -3,9 +3,8 @@ import Layout from '../layouts/Layout.astro';
 import { Topbar } from '../components/dashboard/Topbar';
 import { NavigationPanel } from '../components/dashboard/NavigationPanel';
 import { UnpaidSalesCarousel } from '../components/dashboard/UnpaidSalesCarousel';
-import { IncomeBarChart } from '../components/dashboard/IncomeBarChart';
-import { ClientsPieChart } from '../components/dashboard/ClientsPieChart';
-import { salesApi, clientsApi, type Sale, type Client } from '../lib/api';
+import { DashboardCharts } from '../components/dashboard/DashboardCharts';
+import { salesApi, clientsApi, gastosApi, type Sale, type Client, type Gasto } from '../lib/api';
 
 function mapSaleToViewModel(sale: Sale) {
   return {
@@ -17,127 +16,145 @@ function mapSaleToViewModel(sale: Sale) {
   }
 }
 
-function mapSaleToIncomeData(sales: Sale[]) {
-  // Group sales by date
-  const salesByDate: Record<string, number> = {}
-  
+function mapTopClientsData(sales: Sale[]) {
+  const amountPerClient: Record<string, number> = {}
+
   sales.forEach(sale => {
-    const saleDate = new Date(sale.creado_el)
-    const month = (saleDate.getMonth() + 1).toString().padStart(2, '0')
-    const day = saleDate.getDate().toString().padStart(2, '0')
-    const key = `${day}/${month}`
-    
-    if (!salesByDate[key]) {
-      salesByDate[key] = 0
+    const name = sale.cliente_nombre || "Desconocido"
+    if (!amountPerClient[name]) {
+      amountPerClient[name] = 0
     }
-    salesByDate[key] += sale.pago
+    amountPerClient[name] += sale.pago
   })
+
+  const LOCAL_CLIENT_NAME = "Cliente Local"
+  const localClientAmount = amountPerClient[LOCAL_CLIENT_NAME] || 0
+
+  // Filter out Local Client and get top 5
+  const otherClients = Object.entries(amountPerClient)
+    .filter(([name]) => name.toLowerCase() !== LOCAL_CLIENT_NAME.toLowerCase())
+    .map(([name, amount]) => ({ name, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5)
+
+  // Format final data (reverse order for rechart to show highest at top)
+  const finalData = []
   
-  // Get unique dates from sales
-  const uniqueDates = Object.keys(salesByDate).sort()
+  // Add others first (so they appear at the bottom of the bar chart)
+  otherClients.reverse().forEach(client => {
+    finalData.push(client)
+  })
+
+  // Add Local Client last (so it appears at the top of the bar chart)
+  if (localClientAmount >= 0 || otherClients.length === 0) {
+    finalData.push({ name: LOCAL_CLIENT_NAME, amount: localClientAmount })
+  }
+
+  return finalData
+}
+
+function mapBalanceData(sales: Sale[], gastos: Gasto[]) {
+  const dailyData: Record<string, { income: number; expense: number }> = {}
+  
+  // Agrupar ventas
+  sales.forEach(sale => {
+    if (sale.estado === "Cancelado") return; // Ignorar cancelados
+    
+    const dateStr = sale.creado_el.split(" ")[0] // YYYY-MM-DD
+    if (!dailyData[dateStr]) {
+      dailyData[dateStr] = { income: 0, expense: 0 }
+    }
+    dailyData[dateStr].income += sale.pago
+  })
+
+  // Agrupar gastos
+  gastos.forEach(gasto => {
+    if (!gasto.creado_el) return;
+    
+    const dateStr = gasto.creado_el.split(" ")[0] // YYYY-MM-DD
+    if (!dailyData[dateStr]) {
+      dailyData[dateStr] = { income: 0, expense: 0 }
+    }
+    dailyData[dateStr].expense += gasto.monto
+  })
+
+  // Obtener fechas únicas ordenadas
+  const uniqueDates = Object.keys(dailyData).sort()
+  
+  const formatter = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
   
   if (uniqueDates.length === 0) {
-    // No sales - show last 7 days with 0
-    const last7Days: { date: string; income: number }[] = []
+    const last7Days: { date: string; income: number; expense: number }[] = []
     const today = new Date()
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
-      last7Days.push({ date: `${day}/${month}`, income: 0 })
+      const weekday = formatter.format(date)
+      const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1)
+      const dd = date.getDate().toString().padStart(2, '0')
+      const mm = (date.getMonth() + 1).toString().padStart(2, '0')
+      const displayKey = `${capitalizedWeekday} ${dd}/${mm}`
+      last7Days.push({ date: displayKey, income: 0, expense: 0 })
     }
     return last7Days
   }
-  
-  // Find the most recent date in sales and generate 7 days from there
-  const sortedDates = [...uniqueDates].sort().reverse()
-  const latestDateStr = sortedDates[0]
-  const [latestDay, latestMonth] = latestDateStr.split('/').map(Number)
-  const latestDate = new Date(2026, latestMonth - 1, parseInt(latestDay))
-  
-  // Generate 7 days ending on the latest date with sales
-  const result: { date: string; income: number }[] = []
+
+  // Encontrar la fecha más reciente y generar 7 días hacia atrás
+  const latestDateStr = [...uniqueDates].sort().reverse()[0]
+  const [latestYear, latestMonth, latestDay] = latestDateStr.split('-').map(Number)
+  const latestDate = new Date(latestYear, latestMonth - 1, latestDay)
+
+  const result: { date: string; income: number; expense: number }[] = []
   for (let i = 6; i >= 0; i--) {
     const date = new Date(latestDate)
     date.setDate(date.getDate() - i)
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const day = date.getDate().toString().padStart(2, '0')
-    const key = `${day}/${month}`
+    
+    const yyyy = date.getFullYear()
+    const mm = (date.getMonth() + 1).toString().padStart(2, '0')
+    const dd = date.getDate().toString().padStart(2, '0')
+    const fullDateKey = `${yyyy}-${mm}-${dd}`
+    
+    const weekday = formatter.format(date)
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1)
+    const displayKey = `${capitalizedWeekday} ${dd}/${mm}`
+    
     result.push({
-      date: key,
-      income: salesByDate[key] || 0
+      date: displayKey,
+      income: dailyData[fullDateKey]?.income || 0,
+      expense: dailyData[fullDateKey]?.expense || 0
     })
   }
   
   return result
 }
 
-function mapClientData(clients: Client[], sales: Sale[]) {
-  // Count how many sales each client has
-  const salesPerClient: Record<number, number> = {}
-  sales.forEach(sale => {
-    if (!salesPerClient[sale.cliente_id]) {
-      salesPerClient[sale.cliente_id] = 0
-    }
-    salesPerClient[sale.cliente_id]++
-  })
-
-  // Recurrentes: clients with more than 1 sale
-  // Nuevos: clients with only 1 sale or no sales
-  let recurrentes = 0
-  let nuevos = 0
-
-  clients.forEach(client => {
-    const saleCount = salesPerClient[client.id] || 0
-    if (saleCount > 1) {
-      recurrentes++
-    } else {
-      nuevos++
-    }
-  })
-
-  return [
-    { type: "Nuevos", count: nuevos, fill: "#30b7ff" },
-    { type: "Recurrentes", count: recurrentes, fill: "#34d1bf" }
-  ]
-}
-
-const { unpaidSales, incomeData, clientData } = await (async () => {
+const { unpaidSales, topClientsData, balanceData } = await (async () => {
   try {
-    const [sales, clients] = await Promise.all([
+    const [sales, clients, gastos] = await Promise.all([
       salesApi.getAll(),
-      clientsApi.getAll()
+      clientsApi.getAll(),
+      gastosApi.getAll()
     ])
 
     const unpaid = sales
-      .filter(s => s.estado === "Sin Cobrar" || s.estado === "En Producción")
+      .filter(s => s.estado === "Debe" || s.estado === "En Producción")
       .slice(0, 5)
       .map(mapSaleToViewModel)
 
-    const income = mapSaleToIncomeData(sales)
-    const clientsData = mapClientData(clients, sales)
+    const topClients = mapTopClientsData(sales)
+    const balance = mapBalanceData(sales, gastos)
 
     return { 
       unpaidSales: unpaid, 
-      incomeData: income, 
-      clientData: clientsData 
+      topClientsData: topClients,
+      balanceData: balance
     }
   } catch (error) {
     console.error("Error fetching dashboard data:", error)
     return { 
       unpaidSales: [], 
-      incomeData: [
-        { date: "17/04", income: 0 },
-        { date: "18/04", income: 0 },
-        { date: "19/04", income: 0 },
-        { date: "20/04", income: 0 },
-        { date: "21/04", income: 0 },
-      ], 
-      clientData: [
-        { type: "Nuevos", count: 0, fill: "#30b7ff" },
-        { type: "Recurrentes", count: 0, fill: "#34d1bf" }
-      ]
+      topClientsData: [],
+      balanceData: []
     }
   }
 })();
@@ -159,14 +176,13 @@ const { unpaidSales, incomeData, clientData } = await (async () => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-      <div class="lg:col-span-8 flex flex-col min-h-[350px]">
-        <IncomeBarChart data={incomeData} client:load />
+      <div class="lg:col-span-12 flex flex-col min-h-[400px]">
+        <DashboardCharts 
+          topClientsData={topClientsData} 
+          balanceData={balanceData}
+          client:load 
+        />
       </div>
-
-      <div class="lg:col-span-4 flex flex-col min-h-[350px]">
-        <ClientsPieChart data={clientData} client:load />
-      </div>
-
     </div>
   </div>
 </Layout>

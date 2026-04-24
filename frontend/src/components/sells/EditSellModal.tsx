@@ -30,11 +30,15 @@ interface EditSellModalProps {
 
 export function EditSellModal({ sell, isOpen, onClose, onSuccess }: EditSellModalProps) {
   const [status, setStatus] = React.useState("");
+  const [design, setDesign] = React.useState("");
+  const [nota, setNota] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (sell) {
       setStatus(sell.status);
+      setDesign(sell.design);
+      setNota(sell.nota || "");
     }
   }, [sell]);
 
@@ -45,10 +49,11 @@ export function EditSellModal({ sell, isOpen, onClose, onSuccess }: EditSellModa
     setIsSubmitting(true)
     
     const data = {
-      diseno: sell.design,
-      cliente_id: 1, // This would need to be retrieved from the sale data
+      diseno: design,
+      cliente_id: sell.clientId,
       pago: sell.amount,
       estado: status,
+      nota: nota || undefined,
     }
 
     try {
@@ -77,9 +82,16 @@ export function EditSellModal({ sell, isOpen, onClose, onSuccess }: EditSellModa
                 <p className="text-base font-medium text-slate-800 mt-1">{sell.client}</p>
               </div>
 
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <span className="text-xs font-semibold text-slate-500 uppercase">Trabajo</span>
-                <p className="text-base text-slate-800 mt-1">{sell.design}</p>
+              <div className="space-y-2">
+                <Label htmlFor="design" className="text-slate-700 font-semibold">Diseño / Trabajo</Label>
+                <Input 
+                  id="design" 
+                  value={design}
+                  onChange={(e) => setDesign(e.target.value)}
+                  placeholder="Ej. Tarjetas de presentación x100" 
+                  required 
+                  className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]"
+                />
               </div>
 
               <div className="space-y-2">
@@ -90,11 +102,21 @@ export function EditSellModal({ sell, isOpen, onClose, onSuccess }: EditSellModa
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
                 >
-                  <option value="Sin Cobrar">Sin Cobrar</option>
+                  <option value="Debe">Debe</option>
                   <option value="En Producción">En Producción</option>
-                  <option value="Completado">Completado</option>
                   <option value="Cancelado">Cancelado</option>
                 </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nota" className="text-slate-700 font-semibold">Nota</Label>
+                <Textarea 
+                  id="nota" 
+                  value={nota}
+                  onChange={(e) => setNota(e.target.value)}
+                  placeholder="Alguna observación..." 
+                  className="rounded-xl border-slate-200 resize-none h-20 focus-visible:ring-[#30b7ff]"
+                />
               </div>
             </div>
           </div>

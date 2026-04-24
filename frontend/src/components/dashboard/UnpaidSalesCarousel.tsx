@@ -29,7 +29,7 @@ interface UnpaidSalesCarouselProps {
 
 const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
-    "Sin Cobrar": "bg-[#ff9f43]/10 text-[#ff9f43] hover:bg-[#ff9f43]/20",
+    "Debe": "bg-[#ff9f43]/10 text-[#ff9f43] hover:bg-[#ff9f43]/20",
     "En Producción": "bg-[#30b7ff]/10 text-[#30b7ff] hover:bg-[#30b7ff]/20",
   };
   return styles[status] || "bg-slate-100 text-slate-600";
@@ -44,7 +44,7 @@ export function UnpaidSalesCarousel({ sales = [] }: UnpaidSalesCarouselProps) {
             id: "V-001",
             client: "Cargando...",
             amount: 0,
-            status: "Sin Cobrar",
+            status: "Debe",
             date: "2026-04-21",
           },
         ];
@@ -84,7 +84,7 @@ export function UnpaidSalesCarousel({ sales = [] }: UnpaidSalesCarouselProps) {
                       {sale.date}
                     </span>
                     <span className="font-bold text-lg text-slate-800 tabular-nums">
-                      S/ {sale.amount.toLocaleString("es-AR")}
+                      S/ {sale.amount.toLocaleString("es-PE")}
                     </span>
                   </div>
                 </div>

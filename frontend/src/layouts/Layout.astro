@@ -135,7 +135,7 @@ const navItems = [
 			</nav>
 		)}
 
-		<Toaster client:load />
+		<Toaster client:only="react" transition:persist="toaster" />
 		
 		<script is:inline>
 			document.getElementById('logout-btn')?.addEventListener('click', () => {

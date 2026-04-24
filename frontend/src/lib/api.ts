@@ -103,6 +103,13 @@ export const clientsApi = {
     }),
 }
 
+export interface Gasto {
+  id: number
+  notas: string
+  monto: number
+  creado_el: string
+}
+
 export const salesApi = {
   getAll: () => fetchApi<Sale[]>("/ventas"),
   getById: (id: number) => fetchApi<Sale>(`/ventas/${id}`),
@@ -136,6 +143,25 @@ export const salesApi = {
     }),
   delete: (id: number) =>
     fetchApi<{ success: boolean }>(`/ventas/${id}`, {
+      method: "DELETE",
+    }),
+}
+
+export const gastosApi = {
+  getAll: () => fetchApi<Gasto[]>("/gastos"),
+  getById: (id: number) => fetchApi<Gasto>(`/gastos/${id}`),
+  create: (data: { notas: string; monto: number }) =>
+    fetchApi<Gasto>("/gastos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: { notas?: string; monto?: number }) =>
+    fetchApi<Gasto>(`/gastos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    fetchApi<{ success: boolean }>(`/gastos/${id}`, {
       method: "DELETE",
     }),
 }

@@ -51,9 +51,8 @@ export function SellsToolbar({ onSearch, onRegisterClick, searchTerm, dateRange,
           className="h-12 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium shadow-sm w-full lg:w-48 focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
         >
           <option value="">Todos los Estados</option>
-          <option value="Sin Cobrar">Sin Cobrar</option>
+          <option value="Debe">Debe</option>
           <option value="En Producción">En Producción</option>
-          <option value="Completado">Completado</option>
           <option value="Cancelado">Cancelado</option>
         </select>
       </div>

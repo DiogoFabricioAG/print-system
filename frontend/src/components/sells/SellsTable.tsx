@@ -14,9 +14,11 @@ export interface SellData {
   id: string;
   design: string;
   client: string;
+  clientId: number;
   amount: number;
   status: string;
   date: string;
+  nota?: string;
 }
 
 interface SellsTableProps {
@@ -30,10 +32,9 @@ interface SellsTableProps {
 
 const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
-    "Sin Cobrar": "bg-[#fef3c7] text-[#b45309] border-[#fde047]",
+    "Debe": "bg-[#fef3c7] text-[#b45309] border-[#fde047]",
     "En Producción": "bg-[#dbeafe] text-[#1d4ed8] border-[#93c5fd]",
-    "Completado": "bg-[#dcfce7] text-[#15803d] border-[#86efac]",
-    "Cancelado": "bg-[#f1f5f9] text-[#64748b] border-[#cbd5e1]",
+    "Cancelado": "bg-[#dcfce7] text-[#15803d] border-[#86efac]",
   };
   
   return styles[status] || "bg-gray-100 text-gray-700 border-gray-200";

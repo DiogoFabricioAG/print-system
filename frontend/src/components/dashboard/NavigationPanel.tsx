@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ShoppingBag, Users } from "lucide-react";
+import { ShoppingBag, Users, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
@@ -29,6 +29,15 @@ export function NavigationPanel() {
             <Users className="h-4 w-4" />
           </div>
           Ver Clientes
+        </Button>
+        <Button
+          onClick={() => navigate("/gastos")}
+          className="w-full bg-white h-14 text-sm justify-start gap-3 border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all"
+        >
+          <div className="bg-slate-100 p-2 rounded-lg text-slate-500">
+            <Receipt className="h-4 w-4" />
+          </div>
+          Ver Gastos
         </Button>
       </CardContent>
     </Card>

@@ -1,5 +1,8 @@
 import * as React from "react"
-import { ChevronDown, Search, X } from "lucide-react"
+import { ChevronDown, Search, X, Plus } from "lucide-react"
+import { RegisterClientModal } from "@/components/clients/RegisterClientModal"
+import { clientsApi } from "@/lib/api"
+import { showToast } from "@/lib/toast"
 
 interface Client {
   id: number
@@ -12,11 +15,13 @@ interface ClientAutocompleteProps {
   value: number | null
   onChange: (clientId: number | null) => void
   placeholder?: string
+  onClientAdded?: (newClient: Client) => void
 }
 
-export function ClientAutocomplete({ clients, value, onChange, placeholder = "Buscar cliente..." }: ClientAutocompleteProps) {
+export function ClientAutocomplete({ clients, value, onChange, placeholder = "Buscar cliente...", onClientAdded }: ClientAutocompleteProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const containerRef = React.useRef<HTMLDivElement>(null)
 
@@ -34,6 +39,10 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      // Ignorar clics en los modales (Dialog)
+      const isDialogClick = (e.target as Element).closest('[role="dialog"]') !== null
+      if (isDialogClick) return
+
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false)
       }
@@ -46,13 +55,32 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
     onChange(clientId)
     setSearch("")
     setIsOpen(false)
-    inputRef.current?.focus()
+    // No enfocar de nuevo, porque eso lo vuelve a abrir a veces
   }
 
   const handleClear = () => {
     onChange(null)
     setSearch("")
     inputRef.current?.focus()
+  }
+
+  const handleCreateClient = async (data: { nombre: string; numero?: number; descripcion?: string }) => {
+    try {
+      const newClient = await clientsApi.create(data) as Client
+      showToast.success("Cliente creado correctamente")
+      
+      if (onClientAdded) {
+        onClientAdded(newClient)
+      }
+      
+      // Auto-seleccionar y cerrar dropdown y modal
+      onChange(newClient.id)
+      setSearch("")
+      setIsOpen(false)
+      setIsRegisterModalOpen(false)
+    } catch (error) {
+      showToast.error("Error al crear cliente")
+    }
   }
 
   return (
@@ -83,11 +111,11 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
         {selectedClient && (
           <button
             type="button"
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.preventDefault()
               handleClear()
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10"
           >
             <X className="h-4 w-4" />
           </button>
@@ -96,33 +124,54 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-auto">
-          {filteredClients.length === 0 ? (
-            <div className="px-4 py-3 text-slate-500 text-sm">
-              {search ? "No se encontraron clientes" : "No hay clientes disponibles"}
-            </div>
-          ) : (
-            <ul className="py-1">
-              {filteredClients.map((client) => (
-                <li key={client.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleSelect(client.id)}
-                    className={`w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
-                      client.id === value ? "bg-[#30b7ff]/10 text-[#30b7ff]" : "text-slate-700"
-                    }`}
-                  >
-                    <span className="font-medium">{client.nombre}</span>
-                    {client.numero && (
-                      <span className="ml-2 text-sm text-slate-400">{client.numero}</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-64">
+          <button
+            type="button"
+            onClick={() => setIsRegisterModalOpen(true)}
+            className="w-full px-4 py-3 text-left bg-slate-50 hover:bg-slate-100 border-b border-slate-100 flex items-center gap-2 text-[#30b7ff] font-semibold transition-colors shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            + Crear Cliente
+          </button>
+          
+          <div className="overflow-auto flex-1">
+            {filteredClients.length === 0 ? (
+              <div className="px-4 py-3 text-slate-500 text-sm">
+                {search ? "No se encontraron clientes" : "No hay clientes disponibles"}
+              </div>
+            ) : (
+              <ul className="py-1">
+                {filteredClients.map((client) => (
+                  <li key={client.id}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        // onMouseDown prevents input from losing focus before click
+                        e.preventDefault()
+                        handleSelect(client.id)
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
+                        client.id === value ? "bg-[#30b7ff]/10 text-[#30b7ff]" : "text-slate-700"
+                      }`}
+                    >
+                      <span className="font-medium">{client.nombre}</span>
+                      {client.numero && (
+                        <span className="ml-2 text-sm text-slate-400">{client.numero}</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
+
+      <RegisterClientModal 
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSuccess={handleCreateClient}
+      />
     </div>
   )
 }

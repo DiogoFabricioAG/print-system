@@ -72,6 +72,14 @@ export function SellDetailModal({ sell, isOpen, onClose }: SellDetailModalProps)
                 <p className="text-base font-medium text-slate-800 mt-1">{formatDate(sell.date)}</p>
               </div>
             </div>
+
+            {/* Notas */}
+            {sell.nota && (
+              <div className="bg-white rounded-xl p-4 border border-slate-200">
+                <span className="text-xs font-semibold text-slate-500 uppercase">Notas</span>
+                <p className="text-base text-slate-800 mt-1 whitespace-pre-wrap">{sell.nota}</p>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
