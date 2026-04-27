@@ -36,6 +36,14 @@ export function ClientsView() {
 
   React.useEffect(() => {
     fetchClients()
+    
+    // Check if we need to open the register modal from URL
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('modal') === 'register') {
+      setIsRegisterModalOpen(true);
+      // Clean up the URL so refresh doesn't reopen it
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [fetchClients])
 
   const filteredClients = React.useMemo(() => {

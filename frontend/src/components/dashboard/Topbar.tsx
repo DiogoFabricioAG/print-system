@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowBigLeftDash, Info, LogOut, Table } from "lucide-react";
+import { ArrowBigLeftDash, Info, LogOut, Table, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 
@@ -43,7 +43,17 @@ export function Topbar({ inHomePage }: TopbarProps) {
           variant="outline"
           size="icon"
           className="rounded-xl h-11 w-11 border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
-          title="Informacion del Sistema"
+          title="Abrir Chat IA"
+          onClick={() => navigate("/chatbot")}
+        >
+          <Bot className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-xl h-11 w-11 border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+          title="Información del Sistema"
         >
           <Info className="h-5 w-5" />
         </Button>

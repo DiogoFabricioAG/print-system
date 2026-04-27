@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Topbar } from '../components/dashboard/Topbar';
+import { ChatBotView } from '../components/chatbot/ChatBotView';
+---
+
+<Layout title="IA Chat | Print System" showSidebar={false}>
+  <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
+    
+    {/* Header / Topbar */}
+    <Topbar inHomePage={false} client:load />
+
+    {/* Chatbot View */}
+    <div class="mt-8">
+      <ChatBotView client:load />
+    </div>
+
+  </div>
+</Layout>
