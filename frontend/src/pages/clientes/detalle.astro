@@ -1,0 +1,19 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Topbar } from '../../components/dashboard/Topbar';
+import { ClientDetailPage } from '../../components/clients/ClientDetailPage';
+---
+
+<Layout title={`Detalle del Cliente | Print System`} showSidebar={false}>
+  <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    {/* Header / Topbar */}
+    <Topbar inHomePage={false} client:load />
+
+    {/* Detail View */}
+    <div class="mt-8">
+      <ClientDetailPage client:only="react" />
+    </div>
+
+  </div>
+</Layout>

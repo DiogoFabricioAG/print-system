@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import type { ClientData } from "./ClientDetailModal"
+import { Loader2 } from "lucide-react"
+import type { ClientData } from "./ClientsTable"
 
 interface EditClientModalProps {
   client: ClientData | null;
@@ -35,6 +36,7 @@ export function EditClientModal({ client, isOpen, onClose, onSuccess }: EditClie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true)
 
     const data = {
@@ -53,8 +55,20 @@ export function EditClientModal({ client, isOpen, onClose, onSuccess }: EditClie
   if (!client) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && !isSubmitting) onClose()
+    }}>
       <DialogContent className="sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        {/* Overlay de carga */}
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+            <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+              <Loader2 className="h-8 w-8 text-[#ff9f43] animate-spin mb-3" />
+              <p className="text-sm font-semibold text-slate-700">Guardando cambios...</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="p-8">
             <DialogHeader className="mb-6">

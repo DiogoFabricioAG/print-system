@@ -40,9 +40,11 @@ export interface Sale {
   metro_total: number
   maquina: string
   pago: number
+  pago_actual: number
   estado: string
   nota: string
   creado_el: string
+  fecha: string
 }
 
 export interface ClientDetail {
@@ -117,11 +119,13 @@ export const salesApi = {
     diseno: string
     cliente_id: number
     pago: number
+    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string
     estado?: string
     nota?: string
+    fecha?: string
   }) =>
     fetchApi<Sale>("/ventas", {
       method: "POST",
@@ -131,11 +135,13 @@ export const salesApi = {
     diseno: string
     cliente_id: number
     pago: number
+    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string
     estado?: string
     nota?: string
+    fecha?: string
   }) =>
     fetchApi<Sale>(`/ventas/${id}`, {
       method: "PUT",

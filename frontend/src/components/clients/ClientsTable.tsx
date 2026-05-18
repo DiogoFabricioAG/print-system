@@ -9,7 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import type { ClientData } from "./ClientDetailModal"
+
+export interface ClientData {
+  id: string
+  name: string
+  phone: string
+  description: string
+}
 
 interface ClientsTableProps {
   clients: ClientData[];

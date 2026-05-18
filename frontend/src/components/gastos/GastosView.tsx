@@ -1,8 +1,8 @@
-import * as React from "react"
-import { Search, Plus, Edit2, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DateRangePicker } from "@/components/sells/DateRangePicker"
+import * as React from "react";
+import { Search, Plus, Edit2, Trash2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/sells/DateRangePicker";
 import {
   Table,
   TableBody,
@@ -10,25 +10,25 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ConfirmModal } from "@/components/ui/confirm-modal"
-import { gastosApi, type Gasto } from "@/lib/api"
-import { showToast } from "@/lib/toast"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { gastosApi, type Gasto } from "@/lib/api";
+import { showToast } from "@/lib/toast";
 
 export interface GastoData {
-  id: string
-  notas: string
-  monto: number
-  creado_el: string
+  id: string;
+  notas: string;
+  monto: number;
+  creado_el: string;
 }
 
 function mapGastoToViewModel(gasto: Gasto): GastoData {
@@ -37,12 +37,12 @@ function mapGastoToViewModel(gasto: Gasto): GastoData {
     notas: gasto.notas,
     monto: gasto.monto,
     creado_el: gasto.creado_el,
-  }
+  };
 }
 
 interface DateRange {
-  from: Date | undefined
-  to: Date | undefined
+  from: Date | undefined;
+  to: Date | undefined;
 }
 
 function GastosToolbar({
@@ -52,11 +52,11 @@ function GastosToolbar({
   dateRange,
   onDateRangeChange,
 }: {
-  onSearch: (term: string) => void
-  searchTerm: string
-  onRegisterClick: () => void
-  dateRange: DateRange
-  onDateRangeChange: (range: DateRange) => void
+  onSearch: (term: string) => void;
+  searchTerm: string;
+  onRegisterClick: () => void;
+  dateRange: DateRange;
+  onDateRangeChange: (range: DateRange) => void;
 }) {
   return (
     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full">
@@ -76,9 +76,9 @@ function GastosToolbar({
       </div>
 
       <div className="flex items-center gap-2 w-full lg:w-auto">
-        <DateRangePicker 
-          dateRange={dateRange} 
-          onDateRangeChange={onDateRangeChange} 
+        <DateRangePicker
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
         />
       </div>
 
@@ -90,7 +90,7 @@ function GastosToolbar({
         Agregar Gasto
       </Button>
     </div>
-  )
+  );
 }
 
 function GastosTable({
@@ -98,36 +98,53 @@ function GastosTable({
   onEditGasto,
   onDeleteGasto,
 }: {
-  gastos: GastoData[]
-  onEditGasto: (gasto: GastoData) => void
-  onDeleteGasto: (gasto: GastoData) => void
+  gastos: GastoData[];
+  onEditGasto: (gasto: GastoData) => void;
+  onDeleteGasto: (gasto: GastoData) => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       <Table>
         <TableHeader className="bg-slate-50/50">
           <TableRow className="border-slate-200 hover:bg-transparent">
-            <TableHead className="font-semibold text-slate-700 py-4 px-6">Notas</TableHead>
-            <TableHead className="font-semibold text-slate-700 py-4 px-6">Monto</TableHead>
-            <TableHead className="font-semibold text-slate-700 py-4 px-6">Fecha</TableHead>
-            <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">Acciones</TableHead>
+            <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              Notas
+            </TableHead>
+            <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              Pago
+            </TableHead>
+            <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              Fecha
+            </TableHead>
+            <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">
+              Acciones
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {gastos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+              <TableCell
+                colSpan={4}
+                className="h-32 text-center text-slate-500"
+              >
                 No se encontraron gastos.
               </TableCell>
             </TableRow>
           ) : (
             gastos.map((gasto) => (
-              <TableRow key={gasto.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+              <TableRow
+                key={gasto.id}
+                className="border-slate-100 hover:bg-slate-50/50 transition-colors"
+              >
                 <TableCell className="font-medium text-slate-900 py-4 px-6 max-w-[300px] truncate">
                   {gasto.notas || "-"}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
-                  S/ {gasto.monto.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                  S/{" "}
+                  {gasto.monto.toLocaleString("es-PE", {
+                    minimumFractionDigits: 2,
+                  })}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 whitespace-nowrap">
                   {gasto.creado_el ? gasto.creado_el.split(" ")[0] : "-"}
@@ -160,7 +177,7 @@ function GastosTable({
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
 
 function RegisterGastoModal({
@@ -176,6 +193,7 @@ function RegisterGastoModal({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (isSubmitting) return;
     setIsSubmitting(true)
     
     const formData = new FormData(e.currentTarget)
@@ -195,8 +213,20 @@ function RegisterGastoModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && !isSubmitting) onClose()
+    }}>
       <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        {/* Overlay de carga */}
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+            <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+              <Loader2 className="h-8 w-8 text-[#30b7ff] animate-spin mb-3" />
+              <p className="text-sm font-semibold text-slate-700">Preparando registro...</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="p-8">
             <DialogHeader className="mb-6">
@@ -207,7 +237,9 @@ function RegisterGastoModal({
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="monto" className="text-slate-700 font-semibold">Monto (S/)</Label>
+                <Label htmlFor="monto" className="text-slate-700 font-semibold">
+                  Pago (S/)
+                </Label>
                 <Input
                   id="monto"
                   name="monto"
@@ -220,7 +252,9 @@ function RegisterGastoModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notas" className="text-slate-700 font-semibold">Notas / Descripción</Label>
+                <Label htmlFor="notas" className="text-slate-700 font-semibold">
+                  Notas / Descripción
+                </Label>
                 <Textarea
                   id="notas"
                   name="notas"
@@ -253,7 +287,7 @@ function RegisterGastoModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function EditGastoModal({
@@ -271,6 +305,7 @@ function EditGastoModal({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (isSubmitting) return;
     setIsSubmitting(true)
 
     const formData = new FormData(e.currentTarget)
@@ -290,8 +325,20 @@ function EditGastoModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && !isSubmitting) onClose()
+    }}>
       <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        {/* Overlay de carga */}
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+            <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+              <Loader2 className="h-8 w-8 text-[#ff9f43] animate-spin mb-3" />
+              <p className="text-sm font-semibold text-slate-700">Preparando actualización...</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="p-8">
             <DialogHeader className="mb-6">
@@ -302,7 +349,9 @@ function EditGastoModal({
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="monto" className="text-slate-700 font-semibold">Monto (S/)</Label>
+                <Label htmlFor="monto" className="text-slate-700 font-semibold">
+                  Monto (S/)
+                </Label>
                 <Input
                   id="monto"
                   name="monto"
@@ -316,7 +365,9 @@ function EditGastoModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notas" className="text-slate-700 font-semibold">Notas / Descripción</Label>
+                <Label htmlFor="notas" className="text-slate-700 font-semibold">
+                  Notas / Descripción
+                </Label>
                 <Textarea
                   id="notas"
                   name="notas"
@@ -350,165 +401,175 @@ function EditGastoModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export function GastosView() {
-  const [gastos, setGastos] = React.useState<GastoData[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const [dateRange, setDateRange] = React.useState<DateRange>({ from: undefined, to: undefined })
-  const [hasFiltered, setHasFiltered] = React.useState(false)
+  const [gastos, setGastos] = React.useState<GastoData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [dateRange, setDateRange] = React.useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
+  const [hasFiltered, setHasFiltered] = React.useState(false);
 
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false)
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
 
-  const [selectedGasto, setSelectedGasto] = React.useState<GastoData | null>(null)
+  const [selectedGasto, setSelectedGasto] = React.useState<GastoData | null>(
+    null,
+  );
   const [pendingGastoData, setPendingGastoData] = React.useState<{
-    notas: string
-    monto: number
-  } | null>(null)
-  const [isEditing, setIsEditing] = React.useState(false)
-  const [isDeleting, setIsDeleting] = React.useState(false)
+    notas: string;
+    monto: number;
+  } | null>(null);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const fetchData = React.useCallback(async () => {
     try {
-      setLoading(true)
-      const data = await gastosApi.getAll()
-      setGastos(data.map(mapGastoToViewModel))
+      setLoading(true);
+      const data = await gastosApi.getAll();
+      setGastos(data.map(mapGastoToViewModel));
     } catch (error) {
-      showToast.error("Error al cargar gastos")
-      console.error(error)
+      showToast.error("Error al cargar gastos");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   React.useEffect(() => {
-    fetchData()
-    
+    fetchData();
+
     // Check if we need to open the register modal from URL
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('modal') === 'register') {
+    if (searchParams.get("modal") === "register") {
       setIsRegisterModalOpen(true);
       // Clean up the URL so refresh doesn't reopen it
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [fetchData])
+  }, [fetchData]);
 
   const filteredGastos = React.useMemo(() => {
-    let result = gastos
+    let result = gastos;
 
     if (searchTerm) {
-      result = result.filter(g => 
-        (g.notas || "").toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      result = result.filter((g) =>
+        (g.notas || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      );
     }
 
     if (dateRange.from || dateRange.to) {
-      result = result.filter(g => {
+      result = result.filter((g) => {
         if (!g.creado_el) return false;
-        
-        const gastoDate = new Date(g.creado_el)
-        const from = dateRange.from ? new Date(dateRange.from) : null
-        const to = dateRange.to ? new Date(dateRange.to) : null
-        
-        if (from && gastoDate < from) return false
-        if (to && gastoDate > to) return false
-        return true
-      })
+
+        const gastoDate = new Date(g.creado_el);
+        const from = dateRange.from ? new Date(dateRange.from) : null;
+        const to = dateRange.to ? new Date(dateRange.to) : null;
+
+        if (from && gastoDate < from) return false;
+        if (to && gastoDate > to) return false;
+        return true;
+      });
     }
 
-    return result
-  }, [gastos, searchTerm, dateRange])
+    return result;
+  }, [gastos, searchTerm, dateRange]);
 
   React.useEffect(() => {
     if (hasFiltered) {
-      showToast.success(`Filtro aplicado: ${filteredGastos.length} resultados`)
-      setHasFiltered(false)
+      showToast.success(`Filtro aplicado: ${filteredGastos.length} resultados`);
+      setHasFiltered(false);
     }
-  }, [searchTerm, dateRange, filteredGastos.length, hasFiltered])
+  }, [searchTerm, dateRange, filteredGastos.length, hasFiltered]);
 
   const handleDateRangeChange = (range: DateRange) => {
-    setDateRange(range)
-    setHasFiltered(true)
-  }
+    setDateRange(range);
+    setHasFiltered(true);
+  };
 
   const totalGastos = React.useMemo(() => {
-    return filteredGastos.reduce((sum, g) => sum + g.monto, 0)
-  }, [filteredGastos])
+    return filteredGastos.reduce((sum, g) => sum + g.monto, 0);
+  }, [filteredGastos]);
 
   const handleRegisterClick = (data: { notas: string; monto: number }) => {
-    setPendingGastoData(data)
-    setIsEditing(false)
-    setIsDeleting(false)
-    setIsConfirmModalOpen(true)
-  }
+    setPendingGastoData(data);
+    setIsEditing(false);
+    setIsDeleting(false);
+    setIsConfirmModalOpen(true);
+  };
 
   const handleEditClick = (data: { notas: string; monto: number }) => {
-    setPendingGastoData(data)
-    setIsEditing(true)
-    setIsDeleting(false)
-    setIsConfirmModalOpen(true)
-  }
+    setPendingGastoData(data);
+    setIsEditing(true);
+    setIsDeleting(false);
+    setIsConfirmModalOpen(true);
+  };
 
   const handleDeleteClick = (gasto: GastoData) => {
-    setSelectedGasto(gasto)
-    setIsDeleting(true)
-    setIsEditing(false)
-    setIsConfirmModalOpen(true)
-  }
+    setSelectedGasto(gasto);
+    setIsDeleting(true);
+    setIsEditing(false);
+    setIsConfirmModalOpen(true);
+  };
 
   const handleConfirmSubmit = async () => {
     try {
       if (isDeleting && selectedGasto) {
-        await gastosApi.delete(Number(selectedGasto.id))
-        showToast.success("Gasto eliminado correctamente")
+        await gastosApi.delete(Number(selectedGasto.id));
+        showToast.success("Gasto eliminado correctamente");
       } else if (isEditing && pendingGastoData) {
-        await gastosApi.update(Number(selectedGasto?.id), pendingGastoData)
-        showToast.success("Gasto actualizado correctamente")
-        setIsEditModalOpen(false)
+        await gastosApi.update(Number(selectedGasto?.id), pendingGastoData);
+        showToast.success("Gasto actualizado correctamente");
+        setIsEditModalOpen(false);
       } else if (pendingGastoData) {
-        await gastosApi.create(pendingGastoData)
-        showToast.success("Gasto registrado correctamente")
-        setIsRegisterModalOpen(false)
+        await gastosApi.create(pendingGastoData);
+        showToast.success("Gasto registrado correctamente");
+        setIsRegisterModalOpen(false);
       }
-      setIsConfirmModalOpen(false)
-      setPendingGastoData(null)
-      setSelectedGasto(null)
-      fetchData()
+      setIsConfirmModalOpen(false);
+      setPendingGastoData(null);
+      setSelectedGasto(null);
+      fetchData();
     } catch (error) {
-      showToast.error(`Error al ${isDeleting ? 'eliminar' : isEditing ? 'actualizar' : 'registrar'} gasto`)
+      showToast.error(
+        `Error al ${isDeleting ? "eliminar" : isEditing ? "actualizar" : "registrar"} gasto`,
+      );
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-slate-500">Cargando gastos...</div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <GastosToolbar 
+      <GastosToolbar
         searchTerm={searchTerm}
         onSearch={(term) => {
-          setSearchTerm(term)
-          if (term) setHasFiltered(true)
+          setSearchTerm(term);
+          if (term) setHasFiltered(true);
         }}
         dateRange={dateRange}
         onDateRangeChange={handleDateRangeChange}
-        onRegisterClick={() => setIsRegisterModalOpen(true)} 
+        onRegisterClick={() => setIsRegisterModalOpen(true)}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 mb-1">Total Gastos</h3>
+          <h3 className="text-sm font-medium text-slate-500 mb-1">
+            Total Gastos
+          </h3>
           <p className="text-3xl font-bold text-slate-900 font-display">
-            S/ {totalGastos.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+            S/{" "}
+            {totalGastos.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -516,8 +577,8 @@ export function GastosView() {
       <GastosTable
         gastos={filteredGastos}
         onEditGasto={(gasto) => {
-          setSelectedGasto(gasto)
-          setIsEditModalOpen(true)
+          setSelectedGasto(gasto);
+          setIsEditModalOpen(true);
         }}
         onDeleteGasto={handleDeleteClick}
       />
@@ -532,8 +593,8 @@ export function GastosView() {
         gasto={selectedGasto}
         isOpen={isEditModalOpen}
         onClose={() => {
-          setIsEditModalOpen(false)
-          setSelectedGasto(null)
+          setIsEditModalOpen(false);
+          setSelectedGasto(null);
         }}
         onSuccess={handleEditClick}
       />
@@ -541,10 +602,10 @@ export function GastosView() {
       <ConfirmModal
         isOpen={isConfirmModalOpen}
         onClose={() => {
-          setIsConfirmModalOpen(false)
-          setPendingGastoData(null)
+          setIsConfirmModalOpen(false);
+          setPendingGastoData(null);
           if (!isEditModalOpen) {
-            setSelectedGasto(null)
+            setSelectedGasto(null);
           }
         }}
         onConfirm={handleConfirmSubmit}
@@ -552,24 +613,24 @@ export function GastosView() {
           isDeleting
             ? "¿Eliminar gasto?"
             : isEditing
-            ? "¿Actualizar gasto?"
-            : "¿Registrar gasto?"
+              ? "¿Actualizar gasto?"
+              : "¿Registrar gasto?"
         }
         message={
           isDeleting
             ? "¿Estás seguro de que deseas eliminar este gasto?"
             : isEditing
-            ? "¿Estás seguro de que deseas actualizar este gasto?"
-            : "¿Estás seguro de que deseas registrar este gasto?"
+              ? "¿Estás seguro de que deseas actualizar este gasto?"
+              : "¿Estás seguro de que deseas registrar este gasto?"
         }
         confirmText={
           isDeleting
             ? "Sí, eliminar"
             : isEditing
-            ? "Sí, actualizar"
-            : "Sí, registrar"
+              ? "Sí, actualizar"
+              : "Sí, registrar"
         }
       />
     </div>
-  )
+  );
 }

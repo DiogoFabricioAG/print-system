@@ -52,8 +52,8 @@ export function SellsToolbar({ onSearch, onRegisterClick, searchTerm, dateRange,
         >
           <option value="">Todos los Estados</option>
           <option value="Debe">Debe</option>
-          <option value="En Producción">En Producción</option>
-          <option value="Cancelado">Cancelado</option>
+          <option value="Crédito">Crédito</option>
+          <option value="Pagó">Pagó</option>
         </select>
       </div>
 

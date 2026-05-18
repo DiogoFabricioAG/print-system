@@ -4,6 +4,7 @@ import { SellsTable, type SellData } from "./SellsTable"
 import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
+import { AddPaymentModal } from "./AddPaymentModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { salesApi, clientsApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
@@ -22,9 +23,13 @@ function mapSaleToViewModel(sale: Sale): SellData {
     client: sale.cliente_nombre,
     clientId: sale.cliente_id,
     amount: sale.pago,
+    pago_actual: sale.pago_actual || 0,
     status: sale.estado,
-    date: sale.creado_el.split(" ")[0],
-    nota: sale.nota
+    date: sale.fecha || sale.creado_el.split(" ")[0],
+    nota: sale.nota,
+    cantidad: sale.cantidad,
+    metro_total: sale.metro_total,
+    maquina: sale.maquina,
   }
 }
 
@@ -42,6 +47,7 @@ export function SellsView() {
   const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false)
   const [pendingSellData, setPendingSellData] = React.useState<{
     diseno: string
@@ -52,6 +58,7 @@ export function SellsView() {
     maquina?: string
     estado?: string
     nota?: string
+    fecha?: string
   } | null>(null)
   const [isEditing, setIsEditing] = React.useState(false)
 
@@ -140,6 +147,11 @@ export function SellsView() {
     setIsEditModalOpen(true)
   }
 
+  const handleAddPaymentSell = (sell: SellData) => {
+    setSelectedSell(sell)
+    setIsPaymentModalOpen(true)
+  }
+
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false)
     setTimeout(() => setSelectedSell(null), 300)
@@ -147,6 +159,11 @@ export function SellsView() {
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
+    setTimeout(() => setSelectedSell(null), 300)
+  }
+
+  const handleClosePaymentModal = () => {
+    setIsPaymentModalOpen(false)
     setTimeout(() => setSelectedSell(null), 300)
   }
 
@@ -169,6 +186,7 @@ export function SellsView() {
     maquina?: string
     estado?: string
     nota?: string
+    fecha?: string
   }) => {
     setPendingSellData(data)
     setIsEditing(false)
@@ -179,15 +197,49 @@ export function SellsView() {
     diseno: string
     cliente_id: number
     pago: number
+    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string
     estado?: string
     nota?: string
+    fecha?: string
   }) => {
     setPendingSellData(data)
     setIsEditing(true)
     setIsConfirmModalOpen(true)
+  }
+
+  const handlePaymentSuccess = async (newTotalPayment: number) => {
+    if (!selectedSell) return;
+    
+    // Auto-determinar si con este pago se completa la deuda
+    let newStatus = selectedSell.status;
+    if (newTotalPayment >= selectedSell.amount) {
+      newStatus = "Pagó";
+    }
+
+    try {
+      await salesApi.update(Number(selectedSell.id), {
+        diseno: selectedSell.design,
+        cliente_id: selectedSell.clientId,
+        pago: selectedSell.amount,
+        pago_actual: newTotalPayment,
+        estado: newStatus,
+        cantidad: selectedSell.cantidad,
+        metro_total: selectedSell.metro_total,
+        maquina: selectedSell.maquina,
+        nota: selectedSell.nota,
+        fecha: selectedSell.date,
+      });
+
+      showToast.success("Pago registrado correctamente");
+      setIsPaymentModalOpen(false);
+      setSelectedSell(null);
+      fetchData(); // Recargar la tabla
+    } catch (error) {
+      showToast.error("Error al registrar el pago");
+    }
   }
 
   const handleConfirmSubmit = async () => {
@@ -243,6 +295,7 @@ export function SellsView() {
         sells={paginatedSells} 
         onViewSell={handleViewSell} 
         onEditSell={handleEditSell}
+        onAddPayment={handleAddPaymentSell}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
@@ -269,6 +322,13 @@ export function SellsView() {
         isOpen={isEditModalOpen} 
         onClose={handleCloseEditModal}
         onSuccess={handleEditClick}
+      />
+
+      <AddPaymentModal
+        sell={selectedSell}
+        isOpen={isPaymentModalOpen}
+        onClose={handleClosePaymentModal}
+        onSuccess={handlePaymentSuccess}
       />
 
       <ConfirmModal

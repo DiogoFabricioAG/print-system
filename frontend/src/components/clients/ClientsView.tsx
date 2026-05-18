@@ -1,11 +1,11 @@
 import * as React from "react"
 import { ClientsToolbar } from "./ClientsToolbar"
-import { ClientsTable } from "./ClientsTable"
-import { ClientDetailModal, type ClientData } from "./ClientDetailModal"
+import { ClientsTable, type ClientData } from "./ClientsTable"
 import { RegisterClientModal } from "./RegisterClientModal"
 import { EditClientModal } from "./EditClientModal"
 import { clientsApi, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
+import { navigate } from "astro/virtual-modules/transitions-router.js"
 
 const ITEMS_PER_PAGE = 5
 
@@ -16,7 +16,6 @@ export function ClientsView() {
   const [currentPage, setCurrentPage] = React.useState(1)
   const [selectedClientId, setSelectedClientId] = React.useState<string | null>(null)
   
-  const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false)
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
@@ -84,8 +83,7 @@ export function ClientsView() {
   }, [searchTerm])
 
   const handleViewClient = (client: ClientData) => {
-    setSelectedClientId(client.id)
-    setIsDetailModalOpen(true)
+    navigate(`/clientes/detalle?id=${client.id}`);
   }
 
   const handleEditClient = (client: ClientData) => {
@@ -96,42 +94,9 @@ export function ClientsView() {
     }
   }
 
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false)
-    setTimeout(() => setSelectedClientId(null), 300)
-  }
-
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
     setTimeout(() => setEditingClient(null), 300)
-  }
-
-  const handleRequestClientData = async (clientId: string) => {
-    try {
-      const detail = await clientsApi.getDetail(Number(clientId))
-      return {
-        id: String(detail.id),
-        name: detail.nombre,
-        phone: detail.numero ? String(detail.numero) : "",
-        description: detail.descripcion || "",
-        metrics: {
-          totalSalesValue: detail.metricas.total_ventas,
-          lastPurchaseDate: detail.metricas.ultima_compra,
-          daysSinceLastPurchase: detail.metricas.dias_desde_ultima_compra,
-          hasDebt: detail.metricas.debe
-        },
-        history: detail.historial.map(h => ({
-          id: String(h.id),
-          product: h.diseno,
-          amount: h.pago,
-          date: h.fecha
-        }))
-      }
-    } catch (error) {
-      showToast.error("Error al cargar datos del cliente")
-      console.error(error)
-      return null
-    }
   }
 
   const handleRegisterSuccess = async (data: { nombre: string; numero?: number; descripcion?: string }) => {
@@ -180,13 +145,6 @@ export function ClientsView() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
-      />
-
-      <ClientDetailModal 
-        clientId={selectedClientId} 
-        isOpen={isDetailModalOpen} 
-        onClose={handleCloseDetailModal}
-        onRequestData={handleRequestClientData}
       />
 
       <RegisterClientModal 
