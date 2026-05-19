@@ -40,7 +40,6 @@ export interface Sale {
   metro_total: number
   maquina: string
   pago: number
-  pago_actual: number
   estado: string
   nota: string
   creado_el: string
@@ -119,7 +118,6 @@ export const salesApi = {
     diseno: string
     cliente_id: number
     pago: number
-    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string
@@ -135,7 +133,6 @@ export const salesApi = {
     diseno: string
     cliente_id: number
     pago: number
-    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string

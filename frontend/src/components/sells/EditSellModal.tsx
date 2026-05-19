@@ -21,7 +21,6 @@ interface EditSellModalProps {
     diseno: string
     cliente_id: number
     pago: number
-    pago_actual?: number
     cantidad?: string
     metro_total?: number
     maquina?: string
@@ -42,7 +41,6 @@ export function EditSellModal({
   // Estados locales para los campos
   const [design, setDesign] = React.useState("");
   const [pago, setPago] = React.useState("");
-  const [pagoActual, setPagoActual] = React.useState("");
   const [cantidad, setCantidad] = React.useState("");
   const [metroTotal, setMetroTotal] = React.useState("");
   const [maquina, setMaquina] = React.useState("");
@@ -54,7 +52,6 @@ export function EditSellModal({
     if (sell) {
       setDesign(sell.design);
       setPago(String(sell.amount));
-      setPagoActual(sell.pago_actual ? String(sell.pago_actual) : "");
       setCantidad(sell.cantidad || "");
       setMetroTotal(sell.metro_total ? String(sell.metro_total) : "");
       setMaquina(sell.maquina || "");
@@ -91,7 +88,6 @@ export function EditSellModal({
       diseno: design,
       cliente_id: sell.clientId, // El cliente no se cambia aquí
       pago: Number(pago),
-      pago_actual: pagoActual ? Number(pagoActual) : undefined,
       cantidad: cantidad || undefined,
       metro_total: metroTotal ? Number(metroTotal) : undefined,
       maquina: maquina || undefined,
@@ -164,13 +160,13 @@ export function EditSellModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label
                     htmlFor="pago"
                     className="text-slate-700 font-semibold"
                   >
-                    Monto Total (S/)
+                    Pago (S/)
                   </Label>
                   <Input
                     id="pago"
@@ -180,30 +176,10 @@ export function EditSellModal({
                     onChange={(e) => setPago(e.target.value)}
                     placeholder="0.00"
                     required
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] text-lg font-bold"
+                    className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="pago_actual"
-                    className="text-slate-700 font-semibold"
-                  >
-                    Adelanto / Pago Actual (S/)
-                  </Label>
-                  <Input
-                    id="pago_actual"
-                    type="number"
-                    step="0.01"
-                    value={pagoActual}
-                    onChange={(e) => setPagoActual(e.target.value)}
-                    placeholder="0.00"
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#f59e0b] text-lg font-bold text-amber-600"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label
                     htmlFor="cantidad"

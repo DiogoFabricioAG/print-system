@@ -16,7 +16,6 @@ export interface SellData {
   client: string;
   clientId: number;
   amount: number;
-  pago_actual: number;
   status: string;
   date: string;
   nota?: string;
@@ -29,7 +28,6 @@ interface SellsTableProps {
   sells: SellData[];
   onViewSell: (sell: SellData) => void;
   onEditSell: (sell: SellData) => void;
-  onAddPayment: (sell: SellData) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -53,7 +51,6 @@ export function SellsTable({
   sells,
   onViewSell,
   onEditSell,
-  onAddPayment,
   currentPage,
   totalPages,
   onPageChange,
@@ -95,11 +92,6 @@ export function SellsTable({
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
                   S/ {sell.amount.toLocaleString("es-PE")}
-                  {sell.pago_actual > 0 && sell.pago_actual < sell.amount && (
-                    <span className="block text-xs text-amber-500 font-semibold mt-0.5">
-                      Pagado: S/ {sell.pago_actual.toLocaleString("es-PE")}
-                    </span>
-                  )}
                 </TableCell>
                 <TableCell className="py-4 px-6">
                   <span
@@ -110,16 +102,6 @@ export function SellsTable({
                 </TableCell>
                 <TableCell className="text-right py-4 px-6">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-lg border-slate-200 text-amber-500 hover:text-amber-600 hover:bg-amber-50 disabled:opacity-50 disabled:bg-slate-50 disabled:text-slate-400"
-                      onClick={() => onAddPayment(sell)}
-                      title={sell.status === "Pagó" || sell.status === "Pago" ? "Venta cancelada" : "Aumentar Pago"}
-                      disabled={sell.status === "Pagó" || sell.status === "Pago"}
-                    >
-                      <Banknote className="h-4 w-4" />
-                    </Button>
                     <Button
                       variant="outline"
                       size="icon"

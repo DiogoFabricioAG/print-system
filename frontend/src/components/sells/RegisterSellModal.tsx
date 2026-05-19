@@ -21,10 +21,6 @@ interface RegisterSellModalProps {
     diseno: string;
     cliente_id: number;
     pago: number;
-    pago_actual?: number;
-    cantidad?: string;
-    metro_total?: number;
-    maquina?: string;
     estado?: string;
     nota?: string;
     fecha?: string;
@@ -63,7 +59,6 @@ export function RegisterSellModal({
       diseno: formData.get("diseno") as string,
       cliente_id: selectedClientId,
       pago: Number(formData.get("pago")),
-      pago_actual: formData.get("pago_actual") ? Number(formData.get("pago_actual")) : undefined,
       cantidad: (formData.get("cantidad") as string) || undefined,
       metro_total: formData.get("metro_total")
         ? Number(formData.get("metro_total"))
@@ -142,13 +137,13 @@ export function RegisterSellModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label
                     htmlFor="pago"
-                    className="text-slate-700 font-semibold flex items-center justify-between"
+                    className="text-slate-700 font-semibold"
                   >
-                    <span>Monto Total (S/)</span>
+                    Pago (S/)
                   </Label>
                   <Input
                     id="pago"
@@ -157,29 +152,10 @@ export function RegisterSellModal({
                     step="0.01"
                     placeholder="0.00"
                     required
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] text-lg font-bold"
+                    className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="pago_actual"
-                    className="text-slate-700 font-semibold"
-                  >
-                    Adelanto / Pago Actual (S/)
-                  </Label>
-                  <Input
-                    id="pago_actual"
-                    name="pago_actual"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#f59e0b] text-lg font-bold text-amber-600"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label
                     htmlFor="cantidad"

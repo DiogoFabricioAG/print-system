@@ -1,5 +1,5 @@
-import * as React from "react"
-import { Info, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
+import * as React from "react";
+import { Info, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -7,14 +7,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 export interface ClientData {
-  id: string
-  name: string
-  phone: string
-  description: string
+  id: string;
+  name: string;
+  phone: string;
+  description: string;
 }
 
 interface ClientsTableProps {
@@ -26,45 +26,62 @@ interface ClientsTableProps {
   onPageChange: (page: number) => void;
 }
 
-export function ClientsTable({ clients, onViewClient, onEditClient, currentPage, totalPages, onPageChange }: ClientsTableProps) {
+export function ClientsTable({
+  clients,
+  onViewClient,
+  onEditClient,
+  currentPage,
+  totalPages,
+  onPageChange,
+}: ClientsTableProps) {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <Table>
-<TableHeader className="bg-slate-50/50">
+          <TableHeader className="bg-slate-50/50">
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="w-[300px] font-semibold text-slate-700 py-4 px-6">Nombre</TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">Telefono</TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">Ultima Compra</TableHead>
-              <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">Acciones</TableHead>
+              <TableHead className="w-[300px] font-semibold text-slate-700 py-4 px-6">
+                Nombre
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+                Telefono
+              </TableHead>
+              <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">
+                Acciones
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+              <TableRow
+                key={client.id}
+                className="border-slate-100 hover:bg-slate-50/50 transition-colors"
+              >
                 <TableCell className="font-medium text-slate-900 py-4 px-6">
                   {client.name}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6">
-                  {client.phone}
+                  {client.phone == "" ? (
+                    <span className="text-slate-400 italic">Sin teléfono</span>
+                  ) : (
+                    client.phone
+                  )}
                 </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6 tabular-nums">
-                  -
-                </TableCell>
+
                 <TableCell className="text-right py-4 px-6">
                   <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
+                    <Button
+                      variant="outline"
+                      size="icon"
                       className="h-9 w-9 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-100"
                       onClick={() => onViewClient(client)}
                       title="Ver detalles"
                     >
                       <Info className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
+                    <Button
+                      variant="outline"
+                      size="icon"
                       className="h-9 w-9 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-100"
                       onClick={() => onEditClient(client)}
                       title="Editar"
@@ -77,7 +94,10 @@ export function ClientsTable({ clients, onViewClient, onEditClient, currentPage,
             ))}
             {clients.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center text-slate-500">
+                <TableCell
+                  colSpan={4}
+                  className="h-32 text-center text-slate-500"
+                >
                   No se encontraron clientes.
                 </TableCell>
               </TableRow>
@@ -114,5 +134,5 @@ export function ClientsTable({ clients, onViewClient, onEditClient, currentPage,
         </div>
       )}
     </div>
-  )
+  );
 }
