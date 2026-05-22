@@ -268,6 +268,10 @@ export function SellsView() {
         onClientAdded={(newClient) => {
           setClients(prev => [...prev, newClient])
         }}
+        onBatchComplete={() => {
+          setIsRegisterModalOpen(false)
+          fetchData()
+        }}
       />
 
       <EditSellModal 

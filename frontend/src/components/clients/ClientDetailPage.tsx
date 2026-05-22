@@ -11,9 +11,13 @@ import {
   Tag,
   Star,
   ArrowLeft,
+  PlusCircle,
+  Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { clientsApi, type ClientDetail } from "@/lib/api";
+import { clientsApi, pagosApi, type ClientDetail } from "@/lib/api";
 import { showToast } from "@/lib/toast";
 import {
   Table,
@@ -23,11 +27,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export function ClientDetailPage() {
   const [clientId, setClientId] = React.useState<string | null>(null);
   const [client, setClient] = React.useState<ClientDetail | null>(null);
   const [loading, setLoading] = React.useState(true);
+
+  // States for payment modals
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = React.useState(false);
+  const [editingPago, setEditingPago] = React.useState<{
+    id: number;
+    pago: number;
+    nota: string;
+    fecha: string;
+  } | null>(null);
+  const [isSubmittingEdit, setIsSubmittingEdit] = React.useState(false);
+  const [deletingPagoId, setDeletingPagoId] = React.useState<number | null>(
+    null,
+  );
+  const [isDeletingPago, setIsDeletingPago] = React.useState(false);
 
   React.useEffect(() => {
     // Solo se ejecuta en el cliente
@@ -36,20 +65,21 @@ export function ClientDetailPage() {
     setClientId(id);
   }, []);
 
-  React.useEffect(() => {
-    const fetchClientData = async () => {
-      try {
-        setLoading(true);
-        const data = await clientsApi.getDetail(Number(clientId));
-        setClient(data);
-      } catch (error) {
-        showToast.error("Error al cargar los detalles del cliente");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchClientData = React.useCallback(async () => {
+    if (!clientId) return;
+    try {
+      setLoading(true);
+      const data = await clientsApi.getDetail(Number(clientId));
+      setClient(data);
+    } catch (error) {
+      showToast.error("Error al cargar los detalles del cliente");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [clientId]);
 
+  React.useEffect(() => {
     if (clientId) {
       fetchClientData();
     } else if (clientId === null) {
@@ -57,7 +87,85 @@ export function ClientDetailPage() {
     } else {
       setLoading(false);
     }
-  }, [clientId]);
+  }, [clientId, fetchClientData]);
+
+  const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!clientId || isSubmittingPayment) return;
+
+    setIsSubmittingPayment(true);
+    const formData = new FormData(e.currentTarget);
+    const pagoNum = parseFloat(formData.get("pago") as string);
+
+    if (isNaN(pagoNum) || pagoNum <= 0) {
+      showToast.error("Ingresa un monto válido");
+      setIsSubmittingPayment(false);
+      return;
+    }
+
+    try {
+      await pagosApi.create({
+        cliente_id: Number(clientId),
+        pago: pagoNum,
+        nota: (formData.get("nota") as string) || undefined,
+        fecha: (formData.get("fecha") as string) || undefined,
+      });
+      showToast.success("Pago registrado correctamente");
+      setIsPaymentModalOpen(false);
+      fetchClientData();
+    } catch (error) {
+      showToast.error("Error al registrar el pago");
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingPago || !clientId || isSubmittingEdit) return;
+
+    setIsSubmittingEdit(true);
+    const formData = new FormData(e.currentTarget);
+    const pagoNum = parseFloat(formData.get("pago") as string);
+
+    if (isNaN(pagoNum) || pagoNum <= 0) {
+      showToast.error("Ingresa un monto válido");
+      setIsSubmittingEdit(false);
+      return;
+    }
+
+    try {
+      await pagosApi.update(editingPago.id, {
+        cliente_id: Number(clientId),
+        pago: pagoNum,
+        nota: (formData.get("nota") as string) || undefined,
+        fecha: (formData.get("fecha") as string) || undefined,
+      });
+      showToast.success("Pago actualizado correctamente");
+      setEditingPago(null);
+      fetchClientData();
+    } catch (error) {
+      showToast.error("Error al actualizar el pago");
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const handleDeletePago = async () => {
+    if (!deletingPagoId || isDeletingPago) return;
+
+    setIsDeletingPago(true);
+    try {
+      await pagosApi.delete(deletingPagoId);
+      showToast.success("Pago eliminado correctamente");
+      setDeletingPagoId(null);
+      fetchClientData();
+    } catch (error) {
+      showToast.error("Error al eliminar el pago");
+    } finally {
+      setIsDeletingPago(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -65,38 +173,15 @@ export function ClientDetailPage() {
   };
 
   const getInsights = (client: ClientDetail) => {
-    const totalOrders = client.historial.length;
-    const averageTicket =
-      totalOrders > 0 ? client.metricas.total_ventas / totalOrders : 0;
-
-    // Calculate most frequent word in design (excluding small words)
-    const words = client.historial.flatMap((h) =>
-      h.diseno.toLowerCase().split(/\s+/),
-    );
-    const wordCounts = words.reduce(
-      (acc, word) => {
-        if (word.length > 3) acc[word] = (acc[word] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    let favoriteProduct = "-";
-    let maxCount = 0;
-    Object.entries(wordCounts).forEach(([word, count]) => {
-      if (count > maxCount) {
-        favoriteProduct = word;
-        maxCount = count;
-      }
-    });
+    const totalOrders = client.historial.filter(
+      (h) => h.tipo === "venta",
+    ).length;
+    const debtBalance =
+      client.metricas.total_ventas - client.metricas.total_pagos;
 
     return {
       totalOrders,
-      averageTicket,
-      favoriteProduct:
-        favoriteProduct !== "-"
-          ? favoriteProduct.charAt(0).toUpperCase() + favoriteProduct.slice(1)
-          : "-",
+      debtBalance: Math.max(0, debtBalance),
     };
   };
 
@@ -173,7 +258,15 @@ export function ClientDetailPage() {
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-col gap-2 min-w-[200px]">
+          <div className="shrink-0 flex flex-col gap-3 min-w-[200px]">
+            <Button
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-12 rounded-xl shadow-sm gap-2"
+            >
+              <PlusCircle className="w-5 h-5" />
+              Registrar Pago
+            </Button>
+
             <div
               className={`flex items-center gap-3 p-4 rounded-2xl border ${client.metricas.debe ? "bg-rose-50/50 border-rose-100" : "bg-emerald-50/50 border-emerald-100"}`}
             >
@@ -246,38 +339,41 @@ export function ClientDetailPage() {
               <Receipt className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-semibold text-slate-600">
-              Ticket Promedio
+              Total Pagado
             </h3>
           </div>
           <p className="text-2xl font-bold text-slate-900">
             S/{" "}
-            {insights.averageTicket.toLocaleString("es-PE", {
+            {client.metricas.total_pagos.toLocaleString("es-PE", {
               minimumFractionDigits: 2,
             })}
           </p>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Por cada pedido
+            En abonos y pagos
           </p>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Star className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+              <AlertCircle className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-semibold text-slate-600">
-              Servicio Frecuente
+              Deuda Restante
             </h3>
           </div>
           <p
             className="text-lg font-bold text-slate-900 truncate"
-            title={insights.favoriteProduct}
+            title={insights.debtBalance.toLocaleString("es-PE", {
+              minimumFractionDigits: 2,
+            })}
           >
-            {insights.favoriteProduct}
+            S/{" "}
+            {insights.debtBalance.toLocaleString("es-PE", {
+              minimumFractionDigits: 2,
+            })}
           </p>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
-            Preferencia de diseño
-          </p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Por cobrar</p>
         </div>
       </div>
 
@@ -313,33 +409,84 @@ export function ClientDetailPage() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Diseño / Trabajo
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Monto
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
                     Fecha
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
+                    Descripción
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
+                    Deuda
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
+                    Pago
+                  </TableHead>
+                  <TableHead className="font-semibold text-slate-700 px-6 py-4 w-20">
+                    Acciones
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {client.historial.map((item) => (
+                {client.historial.map((item, index) => (
                   <TableRow
-                    key={item.id}
+                    key={`${item.tipo}-${item.id}-${index}`}
                     className="border-slate-50 hover:bg-slate-50/80 transition-colors group"
                   >
-                    <TableCell className="px-6 py-4 text-sm font-medium text-slate-800">
-                      {item.diseno}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm font-bold tabular-nums text-slate-700">
-                      S/{" "}
-                      {item.pago.toLocaleString("es-PE", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-slate-500">
+                    <TableCell className="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">
                       {formatDate(item.fecha)}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex w-2 h-2 rounded-full ${item.tipo === "venta" ? "bg-rose-400" : "bg-emerald-400"}`}
+                        />
+                        <span className="text-sm font-medium text-slate-800">
+                          {item.descripcion}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-bold tabular-nums text-rose-600">
+                      {item.deuda > 0
+                        ? `S/ ${item.deuda.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm font-bold tabular-nums text-emerald-600">
+                      {item.pago > 0
+                        ? `S/ ${item.pago.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`
+                        : "-"}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      {item.tipo === "pago" && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() =>
+                              setEditingPago({
+                                id: item.id,
+                                pago: item.pago,
+                                nota:
+                                  item.descripcion === "Abono"
+                                    ? ""
+                                    : item.descripcion,
+                                fecha: item.fecha,
+                              })
+                            }
+                            title="Editar pago"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            onClick={() => setDeletingPagoId(item.id)}
+                            title="Eliminar pago"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -348,6 +495,270 @@ export function ClientDetailPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL DE REGISTRO DE PAGO */}
+      <Dialog
+        open={isPaymentModalOpen}
+        onOpenChange={(open) => {
+          if (!open && !isSubmittingPayment) setIsPaymentModalOpen(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+          {isSubmittingPayment && (
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+              <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+                <Loader2 className="h-8 w-8 text-emerald-500 animate-spin mb-3" />
+                <p className="text-sm font-semibold text-slate-700">
+                  Registrando pago...
+                </p>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handlePaymentSubmit}>
+            <div className="p-8">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-2xl font-bold text-slate-900 font-display">
+                  Registrar Pago / Abono
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="pago"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Monto a pagar (S/)
+                  </Label>
+                  <Input
+                    id="pago"
+                    name="pago"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                    className="rounded-xl border-slate-200 focus-visible:ring-emerald-500 text-lg font-bold"
+                  />
+                  {insights.debtBalance > 0 && (
+                    <p className="text-xs text-rose-500 font-medium mt-1">
+                      Deuda actual: S/{" "}
+                      {insights.debtBalance.toLocaleString("es-PE", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="fecha"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Fecha del pago
+                  </Label>
+                  <Input
+                    id="fecha"
+                    name="fecha"
+                    type="date"
+                    defaultValue={new Date().toISOString().split("T")[0]}
+                    className="rounded-xl border-slate-200 focus-visible:ring-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="nota"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Descripción o Nota (Opcional)
+                  </Label>
+                  <Textarea
+                    id="nota"
+                    name="nota"
+                    placeholder="Ej. Transferencia BCP, Abono para saldar cuenta..."
+                    className="rounded-xl border-slate-200 resize-none h-20 focus-visible:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100"
+                disabled={isSubmittingPayment}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                disabled={isSubmittingPayment}
+              >
+                Guardar Pago
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE EDICION DE PAGO */}
+      <Dialog
+        open={editingPago !== null}
+        onOpenChange={(open) => {
+          if (!open && !isSubmittingEdit) setEditingPago(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+          {isSubmittingEdit && (
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+              <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+                <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-3" />
+                <p className="text-sm font-semibold text-slate-700">
+                  Actualizando pago...
+                </p>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleEditSubmit}>
+            <div className="p-8">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-2xl font-bold text-slate-900 font-display">
+                  Editar Pago / Abono
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-pago"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Monto (S/)
+                  </Label>
+                  <Input
+                    id="edit-pago"
+                    name="pago"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingPago?.pago ?? ""}
+                    required
+                    className="rounded-xl border-slate-200 focus-visible:ring-blue-500 text-lg font-bold"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-fecha"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Fecha del pago
+                  </Label>
+                  <Input
+                    id="edit-fecha"
+                    name="fecha"
+                    type="date"
+                    defaultValue={editingPago?.fecha?.split(" ")[0] ?? ""}
+                    className="rounded-xl border-slate-200 focus-visible:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-nota"
+                    className="text-slate-700 font-semibold"
+                  >
+                    Descripción o Nota
+                  </Label>
+                  <Textarea
+                    id="edit-nota"
+                    name="nota"
+                    defaultValue={editingPago?.nota ?? ""}
+                    placeholder="Ej. Transferencia BCP, Abono para saldar cuenta..."
+                    className="rounded-xl border-slate-200 resize-none h-20 focus-visible:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingPago(null)}
+                className="rounded-xl border-slate-200 text-slate-600 cursor-pointer hover:bg-slate-100"
+                disabled={isSubmittingEdit}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-xl bg-green-600 hover:bg-green-700 cursor-pointer text-white shadow-sm"
+                disabled={isSubmittingEdit}
+              >
+                Guardar Cambios
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE CONFIRMACION DE ELIMINACION */}
+      <Dialog
+        open={deletingPagoId !== null}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingPago) setDeletingPagoId(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[400px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+          {isDeletingPago && (
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+              <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
+                <Loader2 className="h-8 w-8 text-rose-500 animate-spin mb-3" />
+                <p className="text-sm font-semibold text-slate-700">
+                  Eliminando pago...
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-8">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-xl font-bold text-slate-900 font-display">
+                Eliminar Pago
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-slate-600 text-sm">
+              ¿Estás seguro de que deseas eliminar este pago? Esta acción no se
+              puede deshacer.
+            </p>
+          </div>
+
+          <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeletingPagoId(null)}
+              className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100"
+              disabled={isDeletingPago}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeletePago}
+              className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white shadow-sm"
+              disabled={isDeletingPago}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

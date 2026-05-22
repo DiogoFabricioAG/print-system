@@ -119,7 +119,13 @@ export function SellDetailModal({
                   Cliente
                 </p>
                 <p className="font-bold text-slate-800 leading-tight">
-                  {sell.client}
+                  <a 
+                    href={`/clientes/detalle?id=${sell.clientId}`} 
+                    className="hover:text-[#30b7ff] transition-colors underline-offset-4 hover:underline"
+                    title="Ver perfil del cliente"
+                  >
+                    {sell.client}
+                  </a>
                 </p>
               </div>
             </div>

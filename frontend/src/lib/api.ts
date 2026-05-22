@@ -54,13 +54,16 @@ export interface ClientDetail {
   creado_el: string
   metricas: {
     total_ventas: number
+    total_pagos: number
     ultima_compra: string
     dias_desde_ultima_compra: number
     debe: boolean
   }
   historial: Array<{
+    tipo: "venta" | "pago"
     id: number
-    diseno: string
+    descripcion: string
+    deuda: number
     pago: number
     fecha: string
   }>
@@ -165,6 +168,33 @@ export const gastosApi = {
     }),
   delete: (id: number) =>
     fetchApi<{ success: boolean }>(`/gastos/${id}`, {
+      method: "DELETE",
+    }),
+}
+
+export interface Pago {
+  id: number
+  cliente_id: number
+  cliente_nombre: string
+  pago: number
+  nota: string
+  fecha: string
+}
+
+export const pagosApi = {
+  getAll: () => fetchApi<Pago[]>("/pagos"),
+  create: (data: { cliente_id: number; pago: number; nota?: string; fecha?: string }) =>
+    fetchApi<Pago>("/pagos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: { cliente_id: number; pago: number; nota?: string; fecha?: string }) =>
+    fetchApi<Pago>(`/pagos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    fetchApi<{ success: boolean }>(`/pagos/${id}`, {
       method: "DELETE",
     }),
 }

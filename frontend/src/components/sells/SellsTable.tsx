@@ -85,7 +85,13 @@ export function SellsTable({
                 className="border-slate-100 hover:bg-slate-50/50 transition-colors"
               >
                 <TableCell className="font-medium text-slate-900 py-4 px-6">
-                  {sell.client}
+                  <a 
+                    href={`/clientes/detalle?id=${sell.clientId}`} 
+                    className="hover:text-[#30b7ff] transition-colors underline-offset-4 hover:underline"
+                    title="Ver perfil del cliente"
+                  >
+                    {sell.client}
+                  </a>
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
                   {sell.design}
