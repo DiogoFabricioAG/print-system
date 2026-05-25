@@ -181,7 +181,7 @@ export function ClientDetailPage() {
 
     return {
       totalOrders,
-      debtBalance: Math.max(0, debtBalance),
+      debtBalance,
     };
   };
 
@@ -227,7 +227,7 @@ export function ClientDetailPage() {
       <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-70 pointer-events-none"></div>
 
-        <div className="relative flex flex-col md:flex-row md:items-start justify-between gap-6">
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex gap-5 items-start">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#30b7ff] to-blue-600 flex items-center justify-center shadow-lg shrink-0 text-white font-display text-2xl font-bold">
               {client.nombre.charAt(0).toUpperCase()}
@@ -258,7 +258,7 @@ export function ClientDetailPage() {
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-col gap-3 min-w-[200px]">
+          <div className="shrink-0 flex items-center min-w-[200px]">
             <Button
               onClick={() => setIsPaymentModalOpen(true)}
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-12 rounded-xl shadow-sm gap-2"
@@ -266,30 +266,6 @@ export function ClientDetailPage() {
               <PlusCircle className="w-5 h-5" />
               Registrar Pago
             </Button>
-
-            <div
-              className={`flex items-center gap-3 p-4 rounded-2xl border ${client.metricas.debe ? "bg-rose-50/50 border-rose-100" : "bg-emerald-50/50 border-emerald-100"}`}
-            >
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${client.metricas.debe ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600"}`}
-              >
-                {client.metricas.debe ? (
-                  <AlertCircle className="w-5 h-5" />
-                ) : (
-                  <CheckCircle2 className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">
-                  Estado Contable
-                </p>
-                <p
-                  className={`font-bold ${client.metricas.debe ? "text-rose-600" : "text-emerald-600"}`}
-                >
-                  {client.metricas.debe ? "Con Deuda" : "Al Día"}
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -353,28 +329,54 @@ export function ClientDetailPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertCircle className="w-4 h-4" />
+        {(() => {
+          const isDebe = insights.debtBalance > 0.01;
+          const isFavor = insights.debtBalance < -0.01;
+          
+          let iconBg = "bg-rose-50 text-rose-600";
+          let valueText = `S/ ${Math.max(0, insights.debtBalance).toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+          let subtext = "Por cobrar";
+          let subtextClass = "text-slate-500 bg-slate-50";
+
+          if (isDebe) {
+            iconBg = "bg-rose-50 text-rose-600";
+            valueText = `S/ ${insights.debtBalance.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+            subtext = "Por cobrar";
+            subtextClass = "text-rose-600 bg-rose-50";
+          } else if (isFavor) {
+            iconBg = "bg-sky-50 text-sky-600";
+            valueText = `S/ ${Math.abs(insights.debtBalance).toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+            subtext = "A favor del cliente";
+            subtextClass = "text-sky-600 bg-sky-50";
+          } else {
+            iconBg = "bg-emerald-50 text-emerald-600";
+            valueText = "S/ 0.00";
+            subtext = "Al día";
+            subtextClass = "text-emerald-600 bg-emerald-50";
+          }
+
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center`}>
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-semibold text-slate-600">
+                  Deuda Restante
+                </h3>
+              </div>
+              <p
+                className="text-lg font-bold text-slate-900 truncate"
+                title={valueText}
+              >
+                {valueText}
+              </p>
+              <p className={`text-xs mt-1 font-medium inline-block px-2 py-0.5 rounded ${subtextClass}`}>
+                {subtext}
+              </p>
             </div>
-            <h3 className="text-sm font-semibold text-slate-600">
-              Deuda Restante
-            </h3>
-          </div>
-          <p
-            className="text-lg font-bold text-slate-900 truncate"
-            title={insights.debtBalance.toLocaleString("es-PE", {
-              minimumFractionDigits: 2,
-            })}
-          >
-            S/{" "}
-            {insights.debtBalance.toLocaleString("es-PE", {
-              minimumFractionDigits: 2,
-            })}
-          </p>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Por cobrar</p>
-        </div>
+          );
+        })()}
       </div>
 
       {/* HISTORY TABLE */}

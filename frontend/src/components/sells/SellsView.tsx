@@ -5,7 +5,7 @@ import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
-import { salesApi, clientsApi, type Sale, type Client } from "@/lib/api"
+import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 
 const ITEMS_PER_PAGE = 5
@@ -56,6 +56,7 @@ export function SellsView() {
     estado?: string
     nota?: string
     fecha?: string
+    adelantoAmount?: number
   } | null>(null)
   const [isEditing, setIsEditing] = React.useState(false)
 
@@ -174,6 +175,7 @@ export function SellsView() {
     estado?: string
     nota?: string
     fecha?: string
+    adelantoAmount?: number
   }) => {
     setPendingSellData(data)
     setIsEditing(false)
@@ -206,6 +208,21 @@ export function SellsView() {
         showToast.success("Venta actualizada correctamente")
       } else {
         await salesApi.create(pendingSellData)
+        
+        if (pendingSellData.estado === "Pagó" && pendingSellData.pago > 0) {
+          await pagosApi.create({
+            cliente_id: pendingSellData.cliente_id,
+            pago: pendingSellData.pago,
+            nota: `Pago completo - ${pendingSellData.diseno}`,
+          });
+        } else if (pendingSellData.estado === "Crédito" && pendingSellData.adelantoAmount && pendingSellData.adelantoAmount > 0) {
+          await pagosApi.create({
+            cliente_id: pendingSellData.cliente_id,
+            pago: pendingSellData.adelantoAmount,
+            nota: `Adelanto - ${pendingSellData.diseno}`,
+          });
+        }
+
         setIsRegisterModalOpen(false)
         showToast.success("Venta registrada correctamente")
       }

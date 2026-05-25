@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ClientAutocomplete } from "@/components/ui/client-autocomplete";
-import { Loader2, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, FileText, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import type { Client } from "@/lib/api";
-import { salesApi } from "@/lib/api";
+import { salesApi, pagosApi } from "@/lib/api";
 import { showToast } from "@/lib/toast";
 
 interface RegisterSellModalProps {
@@ -29,6 +29,7 @@ interface RegisterSellModalProps {
     estado?: string;
     nota?: string;
     fecha?: string;
+    adelantoAmount?: number;
   }) => void;
   clients: Client[];
   onClientAdded?: (client: Client) => void;
@@ -61,6 +62,8 @@ export function RegisterSellModal({
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [currentEntry, setCurrentEntry] = React.useState(0);
   const [fileNames, setFileNames] = React.useState<string>("");
+  const [estado, setEstado] = React.useState<"Debe" | "Crédito" | "Pagó">("Debe");
+  const [adelantoAmount, setAdelantoAmount] = React.useState<string>("");
 
   const disenoRef = React.useRef<HTMLInputElement>(null);
   const cantidadRef = React.useRef<HTMLInputElement>(null);
@@ -75,6 +78,8 @@ export function RegisterSellModal({
       setParsedEntries([]);
       setCurrentEntry(0);
       setFileNames("");
+      setEstado("Debe");
+      setAdelantoAmount("");
     }
   }, [isOpen]);
 
@@ -143,21 +148,40 @@ export function RegisterSellModal({
       cantidad: (formData.get("cantidad") as string) || undefined,
       metro_total: formData.get("metro_total") ? Number(formData.get("metro_total")) : undefined,
       maquina: (formData.get("maquina") as string) || undefined,
-      estado: (formData.get("estado") as string) || "Debe",
+      estado: estado,
       nota: (formData.get("nota") as string) || undefined,
       fecha: (formData.get("fecha") as string) || undefined,
     };
+
+    const adelantoNum = Number(adelantoAmount) || 0;
 
     try {
       if (parsedEntries.length > 0) {
         // Batch mode: create directly via API
         await salesApi.create(data);
+        
+        if (estado === "Pagó" && data.pago > 0) {
+          await pagosApi.create({
+            cliente_id: data.cliente_id,
+            pago: data.pago,
+            nota: `Pago completo - ${data.diseno}`,
+          });
+        } else if (estado === "Crédito" && adelantoNum > 0) {
+          await pagosApi.create({
+            cliente_id: data.cliente_id,
+            pago: adelantoNum,
+            nota: `Adelanto - ${data.diseno}`,
+          });
+        }
+
         showToast.success(`Registrado: ${data.diseno}`);
 
         if (currentEntry < parsedEntries.length - 1) {
           // Advance to next entry
           setCurrentEntry((p) => p + 1);
           setSelectedClientId(null);
+          setEstado("Debe");
+          setAdelantoAmount("");
         } else {
           // All done
           showToast.success("Todos los trabajos fueron registrados");
@@ -166,7 +190,7 @@ export function RegisterSellModal({
         }
       } else {
         // Normal mode: pass to parent (opens confirm modal)
-        await onSuccess?.(data);
+        await onSuccess?.({ ...data, adelantoAmount: estado === "Crédito" ? adelantoNum : undefined });
       }
     } catch {
       showToast.error("Error al registrar la venta");
@@ -298,7 +322,7 @@ export function RegisterSellModal({
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="pago" className="text-slate-700 font-semibold text-sm">Pago (S/)</Label>
+                  <Label htmlFor="pago" className="text-slate-700 font-semibold text-sm">Costo Total (S/)</Label>
                   <Input id="pago" name="pago" type="number" step="0.01" placeholder="0.00" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
                 </div>
                 <div className="space-y-1.5">
@@ -318,7 +342,16 @@ export function RegisterSellModal({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="estado" className="text-slate-700 font-semibold text-sm">Estado</Label>
-                  <select id="estado" name="estado" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#30b7ff]" defaultValue="Debe">
+                  <select
+                    id="estado"
+                    name="estado"
+                    value={estado}
+                    onChange={(e) => {
+                      const newEstado = e.target.value as "Debe" | "Crédito" | "Pagó";
+                      setEstado(newEstado);
+                    }}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
+                  >
                     <option value="Debe">Debe</option>
                     <option value="Crédito">Crédito</option>
                     <option value="Pagó">Pagó</option>
@@ -329,6 +362,26 @@ export function RegisterSellModal({
                   <Input id="fecha" name="fecha" type="date" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" defaultValue={new Date().toISOString().split("T")[0]} />
                 </div>
               </div>
+
+              {estado === "Crédito" && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-1.5">
+                  <Label htmlFor="adelantoAmount" className="text-amber-800 font-semibold text-sm flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-amber-600 animate-pulse" />
+                    Monto del Adelanto (S/)
+                  </Label>
+                  <Input
+                    id="adelantoAmount"
+                    name="adelantoAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={adelantoAmount}
+                    onChange={(e) => setAdelantoAmount(e.target.value)}
+                    required
+                    className="rounded-xl border-amber-200 focus-visible:ring-amber-400 bg-white text-slate-800"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="nota" className="text-slate-700 font-semibold text-sm">Nota</Label>
