@@ -1,4 +1,5 @@
 import * as React from "react"
+import { X } from "lucide-react"
 import { SellsToolbar } from "./SellsToolbar"
 import { SellsTable, type SellData } from "./SellsTable"
 import { SellDetailModal } from "./SellDetailModal"
@@ -46,6 +47,7 @@ export function SellsView() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
   const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false)
+  const [noteSell, setNoteSell] = React.useState<SellData | null>(null)
   const [pendingSellData, setPendingSellData] = React.useState<{
     diseno: string
     cliente_id: number
@@ -266,6 +268,8 @@ export function SellsView() {
         sells={paginatedSells} 
         onViewSell={handleViewSell} 
         onEditSell={handleEditSell}
+        onViewNote={(sell) => setNoteSell(sell)}
+        highlightedId={noteSell?.id}
         hasMore={hasMore}
         onLoadMore={() => setVisibleCount((p) => p + ITEMS_TO_LOAD)}
       />
@@ -305,6 +309,45 @@ export function SellsView() {
         message={isEditing ? "¿Estás seguro de que deseas actualizar esta venta?" : "¿Estás seguro de que deseas registrar esta venta?"}
         confirmText={isEditing ? "Sí, actualizar" : "Sí, registrar"}
       />
+
+      {/* NOTE PANEL — floating, compact, no backdrop */}
+      {noteSell && (
+        <div className="fixed inset-0 z-40 pointer-events-none flex items-center justify-end p-6">
+          <div className="pointer-events-auto w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📝</span>
+                <h2 className="text-sm font-bold text-slate-800">Nota</h2>
+              </div>
+              <button
+                onClick={() => setNoteSell(null)}
+                className="h-7 w-7 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-white transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Cliente</p>
+                <a href={`/clientes/detalle?id=${noteSell.clientId}`} className="text-sm font-medium text-[#30b7ff] hover:underline">
+                  {noteSell.client}
+                </a>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Diseño</p>
+                <p className="text-sm text-slate-700">{noteSell.design}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Nota</p>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-amber-50/50 rounded-lg p-3 border border-amber-100/50">
+                  {noteSell.nota}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

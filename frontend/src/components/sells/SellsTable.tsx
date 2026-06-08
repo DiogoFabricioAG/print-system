@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Info, Edit2, Loader2 } from "lucide-react";
+import { Info, Edit2, Loader2, StickyNote } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,6 +28,8 @@ interface SellsTableProps {
   sells: SellData[];
   onViewSell: (sell: SellData) => void;
   onEditSell: (sell: SellData) => void;
+  onViewNote?: (sell: SellData) => void;
+  highlightedId?: string;
   hasMore: boolean;
   onLoadMore: () => void;
 }
@@ -50,6 +52,8 @@ export function SellsTable({
   sells,
   onViewSell,
   onEditSell,
+  onViewNote,
+  highlightedId,
   hasMore,
   onLoadMore,
 }: SellsTableProps) {
@@ -109,7 +113,11 @@ export function SellsTable({
             {sells.map((sell) => (
               <TableRow
                 key={sell.id}
-                className="border-slate-100 hover:bg-slate-50/50 transition-colors"
+                className={`border-slate-100 hover:bg-slate-50/50 transition-colors ${
+                  highlightedId === sell.id
+                    ? "bg-amber-50/80 ring-1 ring-amber-200 shadow-[0_0_0_4px_rgba(251,191,36,0.1)]"
+                    : ""
+                }`}
               >
                 <TableCell className="font-medium text-slate-900 py-4 px-6">
                   <a
@@ -156,6 +164,17 @@ export function SellsTable({
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
+                    {onViewNote && sell.nota && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 rounded-lg border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300"
+                        onClick={() => onViewNote(sell)}
+                        title="Ver nota"
+                      >
+                        <StickyNote className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
