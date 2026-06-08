@@ -94,7 +94,7 @@ function ComprasToolbar({
 
       <Button
         onClick={onRegisterClick}
-        className="w-full lg:w-auto h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 cursor-pointer text-white font-semibold shadow-sm gap-2"
+        className="w-full lg:w-auto h-12 px-6 rounded-xl bg-blue-600  hover:bg-blue-700 cursor-pointer text-white font-semibold shadow-sm gap-2"
       >
         <Plus className="h-4 w-4" />
         Agregar Compra
@@ -244,7 +244,7 @@ function ComprasTable({
       {hasMore && (
         <div ref={observerTarget} className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-slate-50 border border-slate-100 rounded-full px-5 py-2 shadow-sm animate-pulse">
-            <Loader2 className="h-4 w-4 animate-spin text-violet-600" />
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
             Cargando más compras...
           </div>
         </div>
@@ -325,7 +325,7 @@ function RegisterCompraModal({
         {isSubmitting && (
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
             <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
-              <Loader2 className="h-8 w-8 text-violet-600 animate-spin mb-3" />
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-3" />
               <p className="text-sm font-semibold text-slate-700">
                 Preparando registro...
               </p>
@@ -354,7 +354,7 @@ function RegisterCompraModal({
                   onChange={(e) =>
                     setSelectedTipo(e.target.value as "INSUMO" | "GASTO")
                   }
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="INSUMO">Insumo (Materia Prima)</option>
                   <option value="GASTO">Gasto Operativo</option>
@@ -372,7 +372,7 @@ function RegisterCompraModal({
                   id="categoria"
                   name="categoria"
                   required
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Seleccionar...</option>
                   {categorias.map((cat) => (
@@ -394,7 +394,7 @@ function RegisterCompraModal({
                   step="0.01"
                   placeholder="0.00"
                   required
-                  className="rounded-xl border-slate-200 focus-visible:ring-violet-500"
+                  className="rounded-xl border-slate-200 focus-visible:ring-blue-500"
                 />
               </div>
 
@@ -406,7 +406,7 @@ function RegisterCompraModal({
                   id="notas"
                   name="notas"
                   placeholder="Detalles de la compra..."
-                  className="rounded-xl border-slate-200 resize-none h-24 focus-visible:ring-violet-500"
+                  className="rounded-xl border-slate-200 resize-none h-24 focus-visible:ring-blue-500"
                 />
               </div>
             </div>
@@ -508,7 +508,7 @@ function EditCompraModal({
         {isSubmitting && (
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
             <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
-              <Loader2 className="h-8 w-8 text-violet-600 animate-spin mb-3" />
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-3" />
               <p className="text-sm font-semibold text-slate-700">
                 Preparando actualización...
               </p>
@@ -539,7 +539,7 @@ function EditCompraModal({
                   onChange={(e) =>
                     setSelectedTipo(e.target.value as "INSUMO" | "GASTO")
                   }
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="INSUMO">Insumo (Materia Prima)</option>
                   <option value="GASTO">Gasto Operativo</option>
@@ -557,7 +557,7 @@ function EditCompraModal({
                   id="categoria-edit"
                   name="categoria"
                   defaultValue={compra?.categoria}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {categorias.map((cat) => (
                     <option key={cat} value={cat}>
@@ -581,7 +581,7 @@ function EditCompraModal({
                   step="0.01"
                   defaultValue={compra?.monto}
                   placeholder="0.00"
-                  className="rounded-xl border-slate-200 focus-visible:ring-violet-500"
+                  className="rounded-xl border-slate-200 focus-visible:ring-blue-500"
                 />
               </div>
 
@@ -597,7 +597,7 @@ function EditCompraModal({
                   name="notas"
                   defaultValue={compra?.notas}
                   placeholder="Detalles de la compra..."
-                  className="rounded-xl border-slate-200 resize-none h-24 focus-visible:ring-violet-500"
+                  className="rounded-xl border-slate-200 resize-none h-24 focus-visible:ring-blue-500"
                 />
               </div>
             </div>
@@ -615,7 +615,7 @@ function EditCompraModal({
             </Button>
             <Button
               type="submit"
-              className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-sm"
+              className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
               disabled={isSubmitting}
             >
               Guardar Cambios
