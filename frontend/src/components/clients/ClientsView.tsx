@@ -7,13 +7,13 @@ import { clientsApi, type Client } from "@/lib/api";
 import { showToast } from "@/lib/toast";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_TO_LOAD = 15;
 
 export function ClientsView() {
   const [clients, setClients] = React.useState<Client[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [visibleCount, setVisibleCount] = React.useState(ITEMS_TO_LOAD);
   const [selectedClientId, setSelectedClientId] = React.useState<string | null>(
     null,
   );
@@ -72,14 +72,14 @@ export function ClientsView() {
     }));
   }, [filteredClients]);
 
-  const totalPages = Math.ceil(clientViewModels.length / ITEMS_PER_PAGE);
   const paginatedClients = React.useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return clientViewModels.slice(start, start + ITEMS_PER_PAGE);
-  }, [clientViewModels, currentPage]);
+    return clientViewModels.slice(0, visibleCount);
+  }, [clientViewModels, visibleCount]);
+
+  const hasMore = clientViewModels.length > visibleCount;
 
   React.useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(ITEMS_TO_LOAD);
     if (searchTerm) {
       showToast.info(`Buscando: "${searchTerm}"`);
     }
@@ -153,9 +153,8 @@ export function ClientsView() {
         clients={paginatedClients}
         onViewClient={handleViewClient}
         onEditClient={handleEditClient}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        hasMore={hasMore}
+        onLoadMore={() => setVisibleCount((p) => p + ITEMS_TO_LOAD)}
       />
 
       <RegisterClientModal

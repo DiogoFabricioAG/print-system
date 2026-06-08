@@ -1,18 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { Topbar } from '../components/dashboard/Topbar';
-import { GastosView } from '../components/gastos/GastosView';
+import { ComprasView } from '../components/compras/ComprasView';
 ---
 
-<Layout title="Gastos | Print System" showSidebar={false}>
+<Layout title="Compras | Print System" showSidebar={false}>
   <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
     
     {/* Header / Topbar */}
     <Topbar inHomePage={false} client:load />
 
-    {/* Vista Principal de Gastos */}
+    {/* Vista Principal de Compras */}
     <div class="mt-8">
-      <GastosView client:load />
+      <ComprasView client:load />
     </div>
 
   </div>

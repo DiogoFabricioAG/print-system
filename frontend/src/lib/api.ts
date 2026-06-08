@@ -107,11 +107,32 @@ export const clientsApi = {
     }),
 }
 
-export interface Gasto {
+export interface Compra {
   id: number
-  notas: string
+  tipo: "INSUMO" | "GASTO"
+  categoria: string
   monto: number
+  notas: string
   creado_el: string
+}
+
+export const comprasApi = {
+  getAll: () => fetchApi<Compra[]>("/compras"),
+  getById: (id: number) => fetchApi<Compra>(`/compras/${id}`),
+  create: (data: { tipo: "INSUMO" | "GASTO"; categoria: string; monto: number; notas?: string }) =>
+    fetchApi<Compra>("/compras", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: { tipo?: "INSUMO" | "GASTO"; categoria?: string; monto?: number; notas?: string }) =>
+    fetchApi<Compra>(`/compras/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    fetchApi<{ success: boolean }>(`/compras/${id}`, {
+      method: "DELETE",
+    }),
 }
 
 export const salesApi = {

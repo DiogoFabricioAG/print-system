@@ -2,19 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import { Topbar } from '../components/dashboard/Topbar';
 import { NavigationPanel } from '../components/dashboard/NavigationPanel';
-import { UnpaidSalesCarousel } from '../components/dashboard/UnpaidSalesCarousel';
+import { EstadosFinancieros } from '../components/dashboard/EstadoResultados';
 import { DashboardCharts } from '../components/dashboard/DashboardCharts';
-import { salesApi, clientsApi, gastosApi, type Sale, type Client, type Gasto } from '../lib/api';
-
-function mapSaleToViewModel(sale: Sale) {
-  return {
-    id: String(sale.id),
-    client: sale.cliente_nombre,
-    amount: sale.pago,
-    status: sale.estado,
-    date: sale.creado_el.split(" ")[0]
-  }
-}
+import { salesApi, clientsApi, comprasApi, type Sale, type Client, type Compra } from '../lib/api';
 
 function mapTopClientsData(sales: Sale[]) {
   const amountPerClient: Record<string, number> = {}
@@ -53,29 +43,29 @@ function mapTopClientsData(sales: Sale[]) {
   return finalData
 }
 
-function mapBalanceData(sales: Sale[], gastos: Gasto[]) {
+function mapBalanceData(sales: Sale[], compras: Compra[]) {
   const dailyData: Record<string, { income: number; expense: number }> = {}
   
   // Agrupar ventas
   sales.forEach(sale => {
-    if (sale.estado === "Cancelado") return; // Ignorar cancelados
+    if (sale.estado === "Cancelado") return;
     
-    const dateStr = sale.creado_el.split(" ")[0] // YYYY-MM-DD
+    const dateStr = sale.creado_el.split(" ")[0]
     if (!dailyData[dateStr]) {
       dailyData[dateStr] = { income: 0, expense: 0 }
     }
     dailyData[dateStr].income += sale.pago
   })
 
-  // Agrupar gastos
-  gastos.forEach(gasto => {
-    if (!gasto.creado_el) return;
+  // Agrupar compras (gastos operativos)
+  compras.forEach(compra => {
+    if (!compra.creado_el) return;
     
-    const dateStr = gasto.creado_el.split(" ")[0] // YYYY-MM-DD
+    const dateStr = compra.creado_el.split(" ")[0]
     if (!dailyData[dateStr]) {
       dailyData[dateStr] = { income: 0, expense: 0 }
     }
-    dailyData[dateStr].expense += gasto.monto
+    dailyData[dateStr].expense += compra.monto
   })
 
   // Obtener fechas únicas ordenadas
@@ -128,31 +118,24 @@ function mapBalanceData(sales: Sale[], gastos: Gasto[]) {
   return result
 }
 
-const { unpaidSales, topClientsData, balanceData } = await (async () => {
+const { topClientsData, balanceData } = await (async () => {
   try {
-    const [sales, clients, gastos] = await Promise.all([
+    const [sales, clients, compras] = await Promise.all([
       salesApi.getAll(),
       clientsApi.getAll(),
-      gastosApi.getAll()
+      comprasApi.getAll()
     ])
 
-    const unpaid = sales
-      .filter(s => s.estado === "Debe" || s.estado === "En Producción")
-      .slice(0, 5)
-      .map(mapSaleToViewModel)
-
     const topClients = mapTopClientsData(sales)
-    const balance = mapBalanceData(sales, gastos)
+    const balance = mapBalanceData(sales, compras)
 
     return { 
-      unpaidSales: unpaid, 
       topClientsData: topClients,
       balanceData: balance
     }
   } catch (error) {
     console.error("Error fetching dashboard data:", error)
     return { 
-      unpaidSales: [], 
       topClientsData: [],
       balanceData: []
     }
@@ -165,12 +148,41 @@ const { unpaidSales, topClientsData, balanceData } = await (async () => {
     <Topbar client:load />
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-      <div class="lg:col-span-4 xl:col-span-3 flex flex-col min-h-[220px]">
+      <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-4">
         <NavigationPanel client:load />
+        
+        {/* Gemarra Bot IA */}
+        <a
+          href="/chatbot"
+          class="flex-1 cursor-pointer group relative overflow-hidden rounded-2xl bg-white border-2 border-[#30b7ff]/30 hover:border-[#30b7ff]/60 transition-all hover:shadow-lg hover:shadow-[#30b7ff]/10 flex items-center justify-center"
+          style="animation: pulse-glow 2.5s ease-in-out infinite;"
+        >
+          <div class="flex  flex-col items-center gap-3 p-6 text-center">
+            <div class="relative shrink-0">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#30b7ff] to-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+              </div>
+              <span class="absolute -top-1 -right-1 text-lg">✨</span>
+            </div>
+            <div>
+              <p class="text-base font-bold text-indigo-900">Gamarra Bot IA</p>
+              <p class="text-sm text-indigo-500/80 mt-1 leading-relaxed max-w-[200px]">
+                Pregúntale sobre ventas, clientes, deudas y más. ¡Como hablar con tu contador!
+              </p>
+            </div>
+          </div>
+        </a>
+
+        <style>
+          @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(48, 183, 255, 0.3); }
+            50% { box-shadow: 0 0 0 10px rgba(48, 183, 255, 0); }
+          }
+        </style>
       </div>
       
-      <div class="lg:col-span-8 xl:col-span-9 flex flex-col min-h-[220px]">
-        <UnpaidSalesCarousel sales={unpaidSales} client:load />
+      <div class="lg:col-span-8 xl:col-span-9 flex flex-col min-h-[220px]" id="estado-resultados">
+        <EstadosFinancieros client:load />
       </div>
 
     </div>

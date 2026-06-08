@@ -8,7 +8,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 
-const ITEMS_PER_PAGE = 5
+const ITEMS_TO_LOAD = 15
 
 interface DateRange {
   from: Date | undefined
@@ -36,7 +36,7 @@ export function SellsView() {
   const [clients, setClients] = React.useState<Client[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchTerm, setSearchTerm] = React.useState("")
-  const [currentPage, setCurrentPage] = React.useState(1)
+  const [visibleCount, setVisibleCount] = React.useState(ITEMS_TO_LOAD)
   const [selectedSell, setSelectedSell] = React.useState<SellData | null>(null)
   const [dateRange, setDateRange] = React.useState<DateRange>({ from: undefined, to: undefined })
   const [statusFilter, setStatusFilter] = React.useState("")
@@ -118,14 +118,14 @@ export function SellsView() {
     return result
   }, [sales, searchTerm, dateRange, statusFilter])
 
-  const totalPages = Math.ceil(filteredSells.length / ITEMS_PER_PAGE)
   const paginatedSells = React.useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return filteredSells.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredSells, currentPage])
+    return filteredSells.slice(0, visibleCount)
+  }, [filteredSells, visibleCount])
+
+  const hasMore = filteredSells.length > visibleCount;
 
   React.useEffect(() => {
-    setCurrentPage(1)
+    setVisibleCount(ITEMS_TO_LOAD)
   }, [searchTerm, dateRange, statusFilter])
 
   React.useEffect(() => {
@@ -266,9 +266,8 @@ export function SellsView() {
         sells={paginatedSells} 
         onViewSell={handleViewSell} 
         onEditSell={handleEditSell}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        hasMore={hasMore}
+        onLoadMore={() => setVisibleCount((p) => p + ITEMS_TO_LOAD)}
       />
 
       <SellDetailModal 

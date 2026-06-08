@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Info, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Info, Edit2, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,19 +21,43 @@ interface ClientsTableProps {
   clients: ClientData[];
   onViewClient: (client: ClientData) => void;
   onEditClient: (client: ClientData) => void;
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  hasMore: boolean;
+  onLoadMore: () => void;
 }
 
 export function ClientsTable({
   clients,
   onViewClient,
   onEditClient,
-  currentPage,
-  totalPages,
-  onPageChange,
+  hasMore,
+  onLoadMore,
 }: ClientsTableProps) {
+  const observerTarget = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: "150px" }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, onLoadMore]);
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -106,30 +130,11 @@ export function ClientsTable({
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-500">
-            Página {currentPage} de {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+      {hasMore && (
+        <div ref={observerTarget} className="flex justify-center py-6">
+          <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-slate-50 border border-slate-100 rounded-full px-5 py-2 shadow-sm animate-pulse">
+            <Loader2 className="h-4 w-4 animate-spin text-[#30b7ff]" />
+            Cargando más clientes...
           </div>
         </div>
       )}

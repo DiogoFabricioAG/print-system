@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Info, Edit2, ChevronLeft, ChevronRight, Banknote } from "lucide-react";
+import { Info, Edit2, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,9 +28,8 @@ interface SellsTableProps {
   sells: SellData[];
   onViewSell: (sell: SellData) => void;
   onEditSell: (sell: SellData) => void;
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  hasMore: boolean;
+  onLoadMore: () => void;
 }
 
 const getStatusBadge = (status: string) => {
@@ -39,9 +38,9 @@ const getStatusBadge = (status: string) => {
     Crédito: "bg-amber-50 text-amber-600 border-amber-200",
     Pagó: "bg-emerald-50 text-emerald-600 border-emerald-200",
     // Compatibilidad
-    "Pago": "bg-emerald-50 text-emerald-600 border-emerald-200",
+    Pago: "bg-emerald-50 text-emerald-600 border-emerald-200",
     "En Producción": "bg-amber-50 text-amber-600 border-amber-200",
-    "Cancelado": "bg-emerald-50 text-emerald-600 border-emerald-200",
+    Cancelado: "bg-emerald-50 text-emerald-600 border-emerald-200",
   };
 
   return styles[status] || "bg-slate-50 text-slate-600 border-slate-200";
@@ -51,10 +50,35 @@ export function SellsTable({
   sells,
   onViewSell,
   onEditSell,
-  currentPage,
-  totalPages,
-  onPageChange,
+  hasMore,
+  onLoadMore,
 }: SellsTableProps) {
+  const observerTarget = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: "150px" }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, onLoadMore]);
+
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -73,6 +97,9 @@ export function SellsTable({
               <TableHead className="font-semibold text-slate-700 py-4 px-6">
                 Estado
               </TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+                Fecha
+              </TableHead>
               <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">
                 Acciones
               </TableHead>
@@ -85,8 +112,8 @@ export function SellsTable({
                 className="border-slate-100 hover:bg-slate-50/50 transition-colors"
               >
                 <TableCell className="font-medium text-slate-900 py-4 px-6">
-                  <a 
-                    href={`/clientes/detalle?id=${sell.clientId}`} 
+                  <a
+                    href={`/clientes/detalle?id=${sell.clientId}`}
                     className="hover:text-[#30b7ff] transition-colors underline-offset-4 hover:underline"
                     title="Ver perfil del cliente"
                   >
@@ -105,6 +132,9 @@ export function SellsTable({
                   >
                     {sell.status}
                   </span>
+                </TableCell>
+                <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
+                  {sell.date}
                 </TableCell>
                 <TableCell className="text-right py-4 px-6">
                   <div className="flex justify-end gap-2">
@@ -144,30 +174,11 @@ export function SellsTable({
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-500">
-            Página {currentPage} de {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-lg border-slate-200"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+      {hasMore && (
+        <div ref={observerTarget} className="flex justify-center py-6">
+          <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-slate-50 border border-slate-100 rounded-full px-5 py-2 shadow-sm animate-pulse">
+            <Loader2 className="h-4 w-4 animate-spin text-[#30b7ff]" />
+            Cargando más trabajos...
           </div>
         </div>
       )}
