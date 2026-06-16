@@ -58,8 +58,15 @@ export function RegisterSellModal({
   const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null);
 
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [showImagePreview, setShowImagePreview] = React.useState(false);
+  const [imageZoom, setImageZoom] = React.useState(1);
   const [parsedEntries, setParsedEntries] = React.useState<ParsedEntry[]>([]);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = React.useState(0);
+  const [analyzeMessage, setAnalyzeMessage] = React.useState("");
+  const progressRef = React.useRef<number>(0);
+  const progressTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
   const [currentEntry, setCurrentEntry] = React.useState(0);
   const [fileNames, setFileNames] = React.useState<string>("");
   const [estado, setEstado] = React.useState<"Debe" | "Crédito" | "Pagó">("Debe");
@@ -80,8 +87,18 @@ export function RegisterSellModal({
       setFileNames("");
       setEstado("Debe");
       setAdelantoAmount("");
+      setIsAnalyzing(false);
+      setAnalyzeProgress(0);
+      setImagePreview(null);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     }
   }, [isOpen]);
+
+  React.useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
+  }, []);
 
   // Auto-apply current entry when page changes
   React.useEffect(() => {
@@ -110,28 +127,96 @@ export function RegisterSellModal({
     setSelectedFiles(files);
     setParsedEntries([]);
     setCurrentEntry(0);
-
-    // Auto-analyze with vision model
     setIsAnalyzing(true);
+    setAnalyzeProgress(0);
+    setAnalyzeMessage("Leyendo imagen...");
+    progressRef.current = 0;
+
+    // Simulate progress while waiting for AI
+    const phase1Messages = ["Enviando imagen...", "Leyendo texto en imagen...", "Extrayendo nombres..."];
+    const phase2Messages = ["Analizando con IA...", "Interpretando datos...", "Procesando resultados..."];
+    let msgIdx = 0;
+    let currentPhase = 1;
+
+    progressTimerRef.current = setInterval(() => {
+      progressRef.current += Math.random() * 3 + 0.5;
+      if (progressRef.current > 45) progressRef.current = 45;
+      setAnalyzeProgress(Math.round(progressRef.current));
+
+      const newMsgIdx = Math.min(
+        Math.floor(progressRef.current / 15),
+        phase1Messages.length - 1,
+      );
+      if (newMsgIdx !== msgIdx) {
+        msgIdx = newMsgIdx;
+        setAnalyzeMessage(phase1Messages[msgIdx]);
+      }
+    }, 500);
+
     try {
       const images = await Promise.all(files.map(readFileAsBase64));
-      const response = await fetch(`${BOT_URL}/parse-image`, {
+      setImagePreview(images[0] || null);
+
+      // Phase 1: Extract filenames from image
+      const imageResponse = await fetch(`${BOT_URL}/parse-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: images.map((d) => ({ data: d })) }),
       });
-      const result = await response.json();
-      if (result.entries && result.entries.length > 0) {
-        setParsedEntries(result.entries);
-        setFileNames((result.filenames_extracted || []).join("\n"));
-        showToast.success(`${result.entries.length} trabajo${result.entries.length !== 1 ? "s" : ""} analizado${result.entries.length !== 1 ? "s" : ""}`);
+      const imageResult = await imageResponse.json();
+
+      if (!imageResult.filenames_extracted || imageResult.filenames_extracted.length === 0) {
+        showToast.error("No se encontraron nombres de archivos en la imagen");
+        return;
+      }
+
+      // Phase 2: Parse filenames into structured data
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      progressRef.current = 45;
+      setAnalyzeProgress(45);
+      setAnalyzeMessage("Interpretando datos...");
+      msgIdx = 0;
+
+      progressTimerRef.current = setInterval(() => {
+        progressRef.current += Math.random() * 3 + 0.5;
+        if (progressRef.current > 90) progressRef.current = 90;
+        setAnalyzeProgress(Math.round(progressRef.current));
+
+        const newMsgIdx = Math.min(
+          Math.floor((progressRef.current - 45) / 15),
+          phase2Messages.length - 1,
+        );
+        if (newMsgIdx !== msgIdx) {
+          msgIdx = newMsgIdx;
+          setAnalyzeMessage(phase2Messages[msgIdx]);
+        }
+      }, 500);
+
+      const parseResponse = await fetch(`${BOT_URL}/parse-files`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filenames: imageResult.filenames_extracted }),
+      });
+      const parseResult = await parseResponse.json();
+
+      if (parseResult.entries && parseResult.entries.length > 0) {
+        setParsedEntries(parseResult.entries);
+        setFileNames(imageResult.filenames_extracted.join("\n"));
+        showToast.success(`${parseResult.entries.length} trabajo${parseResult.entries.length !== 1 ? "s" : ""} analizado${parseResult.entries.length !== 1 ? "s" : ""}`);
       } else {
-        showToast.error(result.error || "No se pudo analizar la imagen");
+        showToast.error("No se pudo analizar los nombres");
       }
     } catch (err) {
       showToast.error("Error al analizar con IA");
     } finally {
-      setIsAnalyzing(false);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      setAnalyzeProgress(100);
+      setAnalyzeMessage("¡Completado!");
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setAnalyzeProgress(0);
+        setAnalyzeMessage("");
+      }, 600);
     }
   };
 
@@ -202,10 +287,11 @@ export function RegisterSellModal({
   const currentParsed = parsedEntries[currentEntry];
 
   return (
+    <>
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && !isSubmitting) onClose();
+        if (!open && !isSubmitting && !isAnalyzing) onClose();
       }}
     >
       <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
@@ -228,40 +314,64 @@ export function RegisterSellModal({
 
             {/* FILE UPLOAD */}
             <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="rounded-lg border-slate-300 text-slate-600 gap-1.5"
-                  disabled={isAnalyzing}
-                >
-                  {isAnalyzing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                  {isAnalyzing ? "Analizando..." : "Cargar archivos"}
-                </Button>
-                {selectedFiles.length > 0 && (
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    {selectedFiles.length} archivo{selectedFiles.length !== 1 ? "s" : ""}
+              {isAnalyzing ? (
+                <div className="bg-white rounded-xl border border-indigo-100 p-4 shadow-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 text-indigo-600 animate-spin" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-indigo-800">
+                        {analyzeProgress < 50 ? "Fase 1: Extracción de Información" : "Fase 2: Comprensión de Información"}
+                      </p>
+                      <p className="text-xs text-indigo-500">{analyzeMessage}</p>
+                    </div>
+                    <span className="text-sm font-bold text-indigo-600 tabular-nums">{analyzeProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-indigo-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-[#30b7ff] rounded-full transition-all duration-300 ease-out" style={{ width: `${analyzeProgress}%` }} />
+                  </div>
+                </div>
+              ) : parsedEntries.length > 0 ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M5 13l4 4L19 7"/></svg>
+                  </div>
+                  <span className="text-xs font-semibold text-emerald-700 flex-1">
+                    {parsedEntries.length} archivo{parsedEntries.length !== 1 ? "s" : ""} analizado{parsedEntries.length !== 1 ? "s" : ""}
                   </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 mt-1.5">
-                Sube una <strong>captura de pantalla</strong> con la lista de archivos. La IA extraerá los nombres y los analizará automáticamente.
-              </p>
+                  {imagePreview && (
+                    <button type="button" onClick={() => { setShowImagePreview(true); setImageZoom(1); }} className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-white/60 px-2 py-1 rounded-md font-medium transition-colors">Ver imagen</button>
+                  )}
+                  <button type="button" onClick={() => { fileInputRef.current?.click(); }} className="text-xs text-slate-500 hover:text-slate-700 hover:bg-white/60 px-2 py-1 rounded-md font-medium transition-colors">Cambiar</button>
+                  <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                </div>
+              ) : (
+                <>
+                  <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="rounded-lg border-slate-300 text-slate-600 gap-1.5">
+                      <FileText className="h-4 w-4" />
+                      Cargar archivos
+                    </Button>
+                    {selectedFiles.length > 0 && (
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        {selectedFiles.length} archivo{selectedFiles.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                    {imagePreview && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setShowImagePreview(true); setImageZoom(1); }} className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1 h-7">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+                        Ver imagen
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1.5">
+                    Sube una <strong>captura de pantalla</strong> con la lista de archivos. La IA extraerá los nombres y los analizará automáticamente.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* PAGINATOR */}
@@ -401,5 +511,56 @@ export function RegisterSellModal({
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* IMAGE PREVIEW MODAL */}
+    {showImagePreview && imagePreview && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-5xl max-h-[90vh] overflow-auto rounded-2xl bg-white shadow-2xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-white/90 backdrop-blur border-b border-slate-100">
+            <span className="text-sm font-medium text-slate-600">Vista previa de la imagen</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setImageZoom((z) => Math.max(0.5, z - 0.25))}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                title="Alejar"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/></svg>
+              </button>
+              <span className="text-xs text-slate-500 w-10 text-center tabular-nums">{Math.round(imageZoom * 100)}%</span>
+              <button
+                onClick={() => setImageZoom((z) => Math.min(3, z + 0.25))}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                title="Acercar"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+              </button>
+              <button
+                onClick={() => setImageZoom(1)}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-xs font-medium text-slate-600"
+                title="Reset"
+              >
+                1:1
+              </button>
+              <button
+                onClick={() => setShowImagePreview(false)}
+                className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 ml-2"
+                title="Cerrar"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center p-4 min-h-[200px]">
+            <img
+              src={imagePreview}
+              alt="Vista previa"
+              style={{ transform: `scale(${imageZoom})`, transformOrigin: "top center" }}
+              className="max-w-full transition-transform duration-200"
+            />
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
