@@ -1,0 +1,417 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Topbar } from '../components/dashboard/Topbar';
+---
+
+<Layout title="Buscador de Archivos | Print System" showSidebar={false}>
+  <div class="space-y-6 md:space-y-8 max-w-7xl mx-auto py-8">
+    <Topbar inHomePage={false} client:load />
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+      <!-- BLOQUE 1: Buscar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden" id="search-block">
+        <!-- Loading overlay -->
+        <div id="search-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 hidden">
+          <div class="w-10 h-10 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin mb-3"></div>
+          <p class="text-sm font-semibold text-slate-700">Analizando imagen...</p>
+          <p class="text-xs text-slate-400 mt-1">Esto puede tomar unos segundos</p>
+        </div>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">Buscar Archivo</h2>
+            <p class="text-xs text-slate-500">Por imagen o texto</p>
+          </div>
+        </div>
+
+        <!-- Drag & Drop de imagen -->
+        <label
+          id="search-dropzone"
+          class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all cursor-pointer group"
+        >
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+              <svg class="h-6 w-6 text-slate-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-slate-600 group-hover:text-blue-700">
+              Arrastra una imagen aquí o haz clic
+            </p>
+            <p class="text-xs text-slate-400">o pega con <strong>Ctrl+V</strong></p>
+          </div>
+          <input type="file" accept="image/*" class="hidden" />
+        </label>
+
+        <!-- Resultados -->
+        <div id="search-results" class="mt-4 space-y-2 hidden">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Resultados</p>
+        </div>
+      </div>
+
+      <!-- BLOQUE 2: Indexar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">Indexar Archivo</h2>
+            <p class="text-xs text-slate-500">Agrega archivos .cdr al buscador</p>
+          </div>
+        </div>
+
+        <!-- Drag & Drop de archivo .cdr -->
+        <label
+          id="index-dropzone"
+          class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-200 rounded-xl hover:border-emerald-300 hover:bg-emerald-50/50 transition-all cursor-pointer group"
+        >
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+              <svg class="h-6 w-6 text-slate-400 group-hover:text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-slate-600 group-hover:text-emerald-700">
+              Arrastra un archivo .cdr aquí
+            </p>
+            <p class="text-xs text-slate-400">o haz clic — solo CorelDRAW</p>
+          </div>
+          <input id="index-file-input" type="file" accept=".cdr" class="hidden" />
+        </label>
+
+        <!-- Formulario de indexación (aparece tras seleccionar archivo) -->
+        <div id="index-form" class="mt-4 hidden space-y-3">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Archivo</p>
+            <p id="index-filename" class="text-sm font-medium text-slate-800 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100"></p>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block" for="index-ruta">Ruta completa</label>
+            <input id="index-ruta" type="text" placeholder="C:\Diseños\logo_cliente.cdr" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Preview (Ctrl+V)</p>
+            <div
+              id="index-paste-area"
+              class="w-full h-32 border-2 border-dashed border-amber-200 rounded-xl flex items-center justify-center text-xs text-slate-400 hover:border-amber-400 hover:bg-amber-50/50 transition-colors cursor-text"
+              tabindex="0"
+            >
+              Haz clic aquí y pega con <strong>Ctrl+V</strong> una captura del diseño
+            </div>
+            <img id="index-preview" class="mt-2 w-full max-h-48 object-contain rounded-lg border border-slate-100 hidden" alt="Preview" />
+          </div>
+          <button id="index-btn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
+            Indexar archivo
+          </button>
+        </div>
+
+        <!-- Estado de indexación -->
+        <div id="index-status" class="mt-4 hidden"></div>
+      </div>
+    </div>
+
+    <!-- LISTADO DE INDEXADOS -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-800">Archivos Indexados</h2>
+        <button id="btn-load-index" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors">
+          Cargar listado
+        </button>
+      </div>
+      <div id="indexed-list" class="space-y-2">
+        <p class="text-sm text-slate-400 text-center py-4">Haz clic en "Cargar listado" para ver los archivos indexados</p>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const BOT = 'https://bot.diogofabricio17.workers.dev';
+
+  function setupDropzone(id: string, fileType: string) {
+    const dropzone = document.getElementById(id);
+    if (!dropzone) return;
+    const input = dropzone.querySelector('input') as HTMLInputElement;
+
+    ['dragenter', 'dragover'].forEach(event => {
+      dropzone.addEventListener(event, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.add('border-blue-400', 'bg-blue-50/50');
+      });
+    });
+    ['dragleave', 'drop'].forEach(event => {
+      dropzone.addEventListener(event, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.remove('border-blue-400', 'bg-blue-50/50');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e: DragEvent) => {
+      const files = e.dataTransfer?.files;
+      if (files?.length) handleFiles(files, fileType);
+    });
+    input?.addEventListener('change', (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files?.length) handleFiles(files, fileType);
+      input.value = '';
+    });
+  }
+
+  async function handleFiles(files: FileList, type: string) {
+    const file = files[0];
+    if (!file) return;
+
+    if (type === 'search') {
+      const resultsDiv = document.getElementById('search-results')!;
+      const overlay = document.getElementById('search-overlay')!;
+      resultsDiv.classList.remove('hidden');
+      resultsDiv.innerHTML = '';
+      overlay.classList.remove('hidden');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${BOT}/search-file`, { method: 'POST', body: formData });
+        const data = await res.json();
+        overlay.classList.add('hidden');
+
+        if (data.results && data.results.length > 0) {
+          resultsDiv.innerHTML = `<p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Top ${data.results.length} resultado(s)${data.searchByVision ? ' — búsqueda visual' : ''}</p>` +
+            data.results.map((r: any) => `
+              <div class="bg-white rounded-xl border border-slate-200 p-3 mb-2 hover:shadow-sm transition-shadow">
+                <div class="flex items-center gap-3">
+                  ${r.thumbnail ? `<img src="${r.thumbnail}" class="w-12 h-12 object-cover rounded-lg bg-slate-100" />` : `<div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs">${r.extension || '?'}</div>`}
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">${r.nombre}</p>
+                    <p class="text-xs text-slate-500 truncate">${r.ruta}</p>
+                    ${r.descripcion ? `<p class="text-xs text-slate-400 mt-0.5 line-clamp-2">${r.descripcion}</p>` : ''}
+                  </div>
+                  <div class="shrink-0 flex flex-col items-end gap-1">
+                    ${data.searchByVision ? `<span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${r.score}%</span>` : ''}
+                    <button onclick="navigator.clipboard.writeText('${r.ruta}')" class="text-xs text-slate-400 hover:text-blue-600 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors" title="Copiar ruta">📋</button>
+                  </div>
+                </div>
+              </div>
+            `).join('');
+        } else {
+          resultsDiv.innerHTML = `<p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultados</p>
+            <div class="text-center py-6">
+              <p class="text-sm text-slate-400 mb-3">${data.message || 'No se encontraron archivos similares'}</p>
+              ${data.queryDescription ? `<div class="bg-amber-50 rounded-xl p-4 border border-amber-100 text-left mx-auto max-w-md">
+                <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">💡 Descripción de tu imagen:</p>
+                <p class="text-sm text-amber-800 leading-relaxed">${data.queryDescription}</p>
+              </div>` : ''}
+            </div>`;
+        }
+      } catch (e) {
+        document.getElementById('search-overlay')!.classList.add('hidden');
+        resultsDiv.innerHTML = `<p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultados</p>
+          <div class="text-center py-8 text-sm text-rose-500">Error al buscar</div>`;
+      }
+    }
+
+    if (type === 'index') {
+      const formDiv = document.getElementById('index-form')!;
+      const filenameEl = document.getElementById('index-filename')!;
+      const rutaInput = document.getElementById('index-ruta') as HTMLInputElement;
+      filenameEl.textContent = file.name;
+      rutaInput.value = `C:\\Disenos\\${file.name}`;
+      formDiv.classList.remove('hidden');
+      window._indexThumbnail = null;
+      const previewImg = document.getElementById('index-preview') as HTMLImageElement;
+      const pasteArea = document.getElementById('index-paste-area')!;
+      previewImg.classList.add('hidden');
+      pasteArea.classList.remove('hidden');
+      pasteArea.innerHTML = `Haz clic aquí y pega con <strong>Ctrl+V</strong> una captura del diseño`;
+    }
+  }
+
+  setupDropzone('search-dropzone', 'search');
+  setupDropzone('index-dropzone', 'index');
+
+  // ── Ctrl+V paste for search ──
+  const searchDropzone = document.getElementById('search-dropzone');
+  searchDropzone?.addEventListener('paste', (e: ClipboardEvent) => {
+    if (!document.getElementById('search-overlay')!.classList.contains('hidden')) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (blob) handleFiles([blob] as any, 'search');
+        break;
+      }
+    }
+  });
+
+  // ── Clipboard paste for index preview ──
+  const pasteArea = document.getElementById('index-paste-area');
+  const previewImg = document.getElementById('index-preview') as HTMLImageElement;
+  pasteArea?.addEventListener('click', () => pasteArea.focus());
+  pasteArea?.addEventListener('paste', (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) continue;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          (window as any)._indexThumbnail = dataUrl;
+          previewImg.src = dataUrl;
+          previewImg.classList.remove('hidden');
+          pasteArea.classList.add('hidden');
+        };
+        reader.readAsDataURL(blob);
+        break;
+      }
+    }
+  });
+
+  // ── Index button ──
+  document.getElementById('index-btn')?.addEventListener('click', async () => {
+    const filenameEl = document.getElementById('index-filename')!;
+    const rutaInput = document.getElementById('index-ruta') as HTMLInputElement;
+    const statusDiv = document.getElementById('index-status')!;
+    const filename = filenameEl.textContent || '';
+    const ruta = rutaInput.value.trim();
+    const thumbnail = (window as any)._indexThumbnail || null;
+
+    statusDiv.classList.remove('hidden');
+    if (!ruta) {
+      statusDiv.innerHTML = `<div class="bg-amber-50 rounded-xl p-4 border border-amber-100"><p class="text-sm text-amber-700">Ingresa la ruta completa del archivo</p></div>`;
+      return;
+    }
+    if (!thumbnail) {
+      statusDiv.innerHTML = `<div class="bg-amber-50 rounded-xl p-4 border border-amber-100"><p class="text-sm text-amber-700">Pega una imagen de preview con <strong>Ctrl+V</strong></p></div>`;
+      return;
+    }
+
+    statusDiv.classList.remove('hidden');
+    statusDiv.innerHTML = `<div class="flex items-center justify-center py-4"><div class="w-5 h-5 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div><span class="ml-2 text-sm text-slate-500">Indexando...</span></div>`;
+
+    try {
+      const res = await fetch(`${BOT}/index-file`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ruta,
+          nombre: filename,
+          extension: '.cdr',
+          descripcion: null,
+          thumbnail,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusDiv.innerHTML = `<div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center"><svg class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></div>
+            <div><p class="text-sm font-medium text-emerald-800">${filename}</p><p class="text-xs text-emerald-600">Indexado correctamente</p></div>
+          </div>
+        </div>`;
+        document.getElementById('index-form')!.classList.add('hidden');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (e: any) {
+      statusDiv.innerHTML = `<div class="bg-rose-50 rounded-xl p-4 border border-rose-100"><p class="text-sm text-rose-700">Error: ${e.message || 'No se pudo indexar'}</p></div>`;
+    }
+  });
+
+  // ── Indexed files list ──
+  async function loadIndexedFiles() {
+    const listDiv = document.getElementById('indexed-list')!;
+    listDiv.innerHTML = `<div class="flex items-center justify-center py-6"><div class="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div><span class="ml-2 text-sm text-slate-500">Cargando...</span></div>`;
+
+    try {
+      const res = await fetch(`${BOT}/search-file`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: '' }),
+      });
+      const data = await res.json();
+      const files = data.results || [];
+
+      if (files.length === 0) {
+        listDiv.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">No hay archivos indexados</p>`;
+        return;
+      }
+
+      listDiv.innerHTML = files.map((f: any) => `
+        <div class="flex items-center gap-3 bg-white rounded-xl border border-slate-200 p-3 hover:shadow-sm transition-shadow group">
+          ${f.thumbnail ? `<img src="${f.thumbnail}" class="w-10 h-10 object-cover rounded-lg bg-slate-100 shrink-0" />` : `<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">${f.extension || '?'}</div>`}
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-800 truncate">${f.nombre}</p>
+            <p class="text-xs text-slate-500 truncate">${f.ruta}</p>
+          </div>
+          <button onclick="deleteIndexedFile('${f.id}', this)" class="shrink-0 text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors">
+            Eliminar
+          </button>
+        </div>
+      `).join('');
+    } catch {
+      listDiv.innerHTML = `<p class="text-sm text-rose-500 text-center py-4">Error al cargar</p>`;
+    }
+  }
+
+  window.deleteIndexedFile = async function(id: string, btn: HTMLButtonElement) {
+    if (btn.dataset.confirming === 'true') {
+      // Second click: execute delete
+      btn.disabled = true;
+      btn.textContent = 'Eliminando...';
+      btn.className = 'shrink-0 text-xs text-slate-300 px-2 py-1 rounded-md font-medium';
+      try {
+        const res = await fetch(`${BOT}/index-file/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          btn.closest('.flex')?.remove();
+          const listDiv = document.getElementById('indexed-list')!;
+          if (!listDiv.querySelector('.flex')) {
+            listDiv.innerHTML = `<div class="text-center py-8"><p class="text-sm text-slate-400">No hay archivos indexados</p><p class="text-xs text-slate-300 mt-1">Indexa tu primer archivo .cdr para empezar</p></div>`;
+          }
+        } else {
+          btn.textContent = 'Eliminar';
+          btn.className = 'shrink-0 text-xs text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors';
+          btn.disabled = false;
+          btn.dataset.confirming = 'false';
+          showErrorInList(data.error || 'Error al eliminar');
+        }
+      } catch {
+        btn.textContent = 'Eliminar';
+        btn.className = 'shrink-0 text-xs text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors';
+        btn.disabled = false;
+        btn.dataset.confirming = 'false';
+        showErrorInList('Error de conexión al eliminar');
+      }
+    } else {
+      // First click: ask confirmation
+      btn.textContent = '¿Confirmar?';
+      btn.className = 'shrink-0 text-xs text-white bg-rose-500 hover:bg-rose-600 px-2 py-1 rounded-md font-medium transition-colors';
+      btn.dataset.confirming = 'true';
+      setTimeout(() => {
+        if (btn.dataset.confirming === 'true') {
+          btn.textContent = 'Eliminar';
+          btn.className = 'shrink-0 text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors';
+          btn.dataset.confirming = 'false';
+        }
+      }, 4000);
+    }
+  };
+
+  function showErrorInList(msg: string) {
+    const listDiv = document.getElementById('indexed-list')!;
+    const existing = listDiv.querySelector('.error-msg');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'error-msg bg-rose-50 rounded-xl p-3 border border-rose-100 text-sm text-rose-700 text-center';
+    el.textContent = msg;
+    listDiv.insertBefore(el, listDiv.firstChild);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  document.getElementById('btn-load-index')?.addEventListener('click', loadIndexedFiles);
+</script>
