@@ -294,7 +294,7 @@ export function RegisterSellModal({
         if (!open && !isSubmitting && !isAnalyzing) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-[500px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[500px] max-h-[95vh] overflow-y-auto bg-white border-slate-200 rounded-2xl p-0 shadow-2xl">
         {isSubmitting && (
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
             <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
@@ -305,9 +305,9 @@ export function RegisterSellModal({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="p-6">
-            <DialogHeader className="mb-4">
-              <DialogTitle className="text-xl font-bold text-slate-900 font-display">
+          <div className="p-4 sm:p-6">
+            <DialogHeader className="mb-3 sm:mb-4">
+              <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 font-display">
                 Registrar Venta
               </DialogTitle>
             </DialogHeader>
@@ -418,93 +418,80 @@ export function RegisterSellModal({
               </div>
             )}
 
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="diseno" className="text-slate-700 font-semibold text-sm">Diseño / Trabajo</Label>
-                <Input ref={disenoRef} id="diseno" name="diseno" placeholder="Ej. Tarjetas x100" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
+            <div className="space-y-2.5 sm:space-y-3">
+              <div className="space-y-1 sm:space-y-1.5">
+                <Label htmlFor="diseno" className="text-slate-700 font-semibold text-xs sm:text-sm">Diseño / Trabajo</Label>
+                <Input ref={disenoRef} id="diseno" name="diseno" placeholder="Ej. Tarjetas x100" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-slate-700 font-semibold text-sm">Cliente</Label>
+              <div className="space-y-1 sm:space-y-1.5">
+                <Label className="text-slate-700 font-semibold text-xs sm:text-sm">Cliente</Label>
                 <ClientAutocomplete clients={clients} value={selectedClientId} onChange={setSelectedClientId} placeholder="Buscar cliente..." onClientAdded={onClientAdded} />
                 <input type="hidden" name="cliente_id" value={selectedClientId || ""} />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="pago" className="text-slate-700 font-semibold text-sm">Costo Total (S/)</Label>
-                  <Input id="pago" name="pago" type="number" step="0.01" placeholder="0.00" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="pago" className="text-slate-700 font-semibold text-xs sm:text-sm">Costo Total (S/)</Label>
+                  <Input id="pago" name="pago" type="number" step="0.01" placeholder="0.00" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cantidad" className="text-slate-700 font-semibold text-sm">Cantidad</Label>
-                  <Input ref={cantidadRef} id="cantidad" name="cantidad" placeholder="Ej. 100" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="cantidad" className="text-slate-700 font-semibold text-xs sm:text-sm">Cantidad</Label>
+                  <Input ref={cantidadRef} id="cantidad" name="cantidad" placeholder="Ej. 100" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="metro_total" className="text-slate-700 font-semibold text-sm">Metro Total</Label>
-                  <Input ref={metroTotalRef} id="metro_total" name="metro_total" type="number" step="0.01" placeholder="0.00" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="metro_total" className="text-slate-700 font-semibold text-xs sm:text-sm">Metro Total</Label>
+                  <Input ref={metroTotalRef} id="metro_total" name="metro_total" type="number" step="0.01" placeholder="0.00" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="maquina" className="text-slate-700 font-semibold text-sm">Máquina</Label>
-                  <Input ref={maquinaRef} id="maquina" name="maquina" placeholder="Ej. Plotter 1" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="maquina" className="text-slate-700 font-semibold text-xs sm:text-sm">Máquina</Label>
+                  <Input ref={maquinaRef} id="maquina" name="maquina" placeholder="Ej. Plotter 1" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="estado" className="text-slate-700 font-semibold text-sm">Estado</Label>
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="estado" className="text-slate-700 font-semibold text-xs sm:text-sm">Estado</Label>
                   <select
                     id="estado"
                     name="estado"
                     value={estado}
-                    onChange={(e) => {
-                      const newEstado = e.target.value as "Debe" | "Crédito" | "Pagó";
-                      setEstado(newEstado);
-                    }}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
+                    onChange={(e) => { const newEstado = e.target.value as "Debe" | "Crédito" | "Pagó"; setEstado(newEstado); }}
+                    className="w-full h-9 sm:h-10 px-2 sm:px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#30b7ff]"
                   >
                     <option value="Debe">Debe</option>
                     <option value="Crédito">Crédito</option>
                     <option value="Pagó">Pagó</option>
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="fecha" className="text-slate-700 font-semibold text-sm">Fecha</Label>
-                  <Input id="fecha" name="fecha" type="date" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff]" defaultValue={new Date().toISOString().split("T")[0]} />
+                <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="fecha" className="text-slate-700 font-semibold text-xs sm:text-sm">Fecha</Label>
+                  <Input id="fecha" name="fecha" type="date" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" defaultValue={new Date().toISOString().split("T")[0]} />
                 </div>
               </div>
 
               {estado === "Crédito" && (
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-1.5">
-                  <Label htmlFor="adelantoAmount" className="text-amber-800 font-semibold text-sm flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-amber-600 animate-pulse" />
+                <div className="p-2.5 sm:p-3 bg-amber-50 rounded-xl border border-amber-100 space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="adelantoAmount" className="text-amber-800 font-semibold text-xs sm:text-sm flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600" />
                     Monto del Adelanto (S/)
                   </Label>
-                  <Input
-                    id="adelantoAmount"
-                    name="adelantoAmount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={adelantoAmount}
-                    onChange={(e) => setAdelantoAmount(e.target.value)}
-                    required
-                    className="rounded-xl border-amber-200 focus-visible:ring-amber-400 bg-white text-slate-800"
-                  />
+                  <Input id="adelantoAmount" name="adelantoAmount" type="number" step="0.01" placeholder="0.00" value={adelantoAmount} onChange={(e) => setAdelantoAmount(e.target.value)} required className="rounded-xl border-amber-200 focus-visible:ring-amber-400 bg-white text-slate-800 h-9 sm:h-10 text-sm" />
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="nota" className="text-slate-700 font-semibold text-sm">Nota</Label>
-                <Textarea id="nota" name="nota" placeholder="Alguna observación..." className="rounded-xl border-slate-200 resize-none h-16 text-sm focus-visible:ring-[#30b7ff]" />
+              <div className="space-y-1 sm:space-y-1.5">
+                <Label htmlFor="nota" className="text-slate-700 font-semibold text-xs sm:text-sm">Nota</Label>
+                <Textarea id="nota" name="nota" placeholder="Alguna observación..." className="rounded-xl border-slate-200 resize-none h-14 sm:h-16 text-sm focus-visible:ring-[#30b7ff]" />
               </div>
             </div>
           </div>
 
-          <DialogFooter className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex gap-2">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100" disabled={isSubmitting}>
+          <DialogFooter className="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-100 flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 text-sm h-9 sm:h-10 flex-1 sm:flex-none" disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" className="rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white shadow-sm" disabled={isSubmitting || !selectedClientId}>
+            <Button type="submit" className="rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white shadow-sm text-sm h-9 sm:h-10 flex-1 sm:flex-none" disabled={isSubmitting || !selectedClientId}>
               {isSubmitting ? "Registrando..." : parsedEntries.length > 1 ? `Registrar (${currentEntry + 1}/${parsedEntries.length})` : "Registrar"}
             </Button>
           </DialogFooter>
