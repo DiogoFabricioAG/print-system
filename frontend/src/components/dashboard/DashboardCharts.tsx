@@ -13,6 +13,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { comprasApi, salesApi } from "@/lib/api";
+import {
+  mapBalanceData,
+  mapTopClientsData,
+  type BalanceData,
+  type TopClientData,
+} from "@/lib/dashboard";
 
 const balanceConfig = {
   income: {
@@ -33,25 +40,62 @@ const topClientsConfig = {
 } satisfies ChartConfig;
 
 interface DashboardChartsProps {
-  topClientsData: { name: string; amount: number }[];
-  balanceData?: { date: string; income: number; expense: number }[];
+  topClientsData?: TopClientData[];
+  balanceData?: BalanceData[];
 }
 
 export function DashboardCharts({
-  topClientsData = [],
-  balanceData = [],
+  topClientsData: initialTopClientsData = [],
+  balanceData: initialBalanceData = [],
 }: DashboardChartsProps) {
   const [activeChart, setActiveChart] = React.useState<"balance" | "clients">(
     "balance",
   );
+  const [topClientsData, setTopClientsData] = React.useState(initialTopClientsData);
+  const [balanceData, setBalanceData] = React.useState(initialBalanceData);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let isCurrent = true;
+
+    const loadDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [sales, compras] = await Promise.all([
+          salesApi.getAll(),
+          comprasApi.getAll(),
+        ]);
+
+        if (!isCurrent) return;
+
+        setTopClientsData(mapTopClientsData(sales));
+        setBalanceData(mapBalanceData(sales, compras));
+      } catch (loadError) {
+        console.error("Error fetching dashboard charts:", loadError);
+        if (isCurrent) setError("No se pudieron actualizar las métricas");
+      } finally {
+        if (isCurrent) setLoading(false);
+      }
+    };
+
+    void loadDashboardData();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
 
   const displayBalanceData =
     balanceData.length > 0
       ? balanceData
-      : [
-          { date: "Lun 17/04", income: 0, expense: 0 },
-          { date: "Mar 18/04", income: 0, expense: 0 },
-        ];
+      : mapBalanceData([], []);
+  const displayTopClientsData =
+    topClientsData.length > 0
+      ? topClientsData
+      : [{ name: "Sin datos", amount: 0 }];
 
   return (
     <Card className="h-full border-slate-200 shadow-sm bg-white flex flex-col">
@@ -90,7 +134,15 @@ export function DashboardCharts({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 w-full px-2 sm:px-6 pb-6 min-h-[350px]">
+      <CardContent className="relative flex-1 w-full px-2 sm:px-6 pb-6 min-h-[350px]">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 text-sm text-slate-500 backdrop-blur-[1px]">
+            Actualizando métricas...
+          </div>
+        )}
+        {error && (
+          <p className="mb-2 text-center text-xs text-rose-500">{error}</p>
+        )}
         {activeChart === "balance" && (
           <ChartContainer
             config={balanceConfig}
@@ -150,7 +202,7 @@ export function DashboardCharts({
             className="h-full w-full min-h-[300px]"
           >
             <BarChart
-              data={topClientsData}
+              data={displayTopClientsData}
               layout="vertical"
               margin={{ top: 0, right: 20, bottom: 10, left: 10 }}
             >

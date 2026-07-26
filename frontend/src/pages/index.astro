@@ -4,143 +4,6 @@ import { Topbar } from '../components/dashboard/Topbar';
 import { NavigationPanel } from '../components/dashboard/NavigationPanel';
 import { EstadosFinancieros } from '../components/dashboard/EstadoResultados';
 import { DashboardCharts } from '../components/dashboard/DashboardCharts';
-import { salesApi, clientsApi, comprasApi, type Sale, type Client, type Compra } from '../lib/api';
-
-function mapTopClientsData(sales: Sale[]) {
-  const amountPerClient: Record<string, number> = {}
-
-  sales.forEach(sale => {
-    const name = sale.cliente_nombre || "Desconocido"
-    if (!amountPerClient[name]) {
-      amountPerClient[name] = 0
-    }
-    amountPerClient[name] += sale.pago
-  })
-
-  const LOCAL_CLIENT_NAME = "Cliente Local"
-  const localClientAmount = amountPerClient[LOCAL_CLIENT_NAME] || 0
-
-  // Filter out Local Client and get top 5
-  const otherClients = Object.entries(amountPerClient)
-    .filter(([name]) => name.toLowerCase() !== LOCAL_CLIENT_NAME.toLowerCase())
-    .map(([name, amount]) => ({ name, amount }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5)
-
-  // Format final data (reverse order for rechart to show highest at top)
-  const finalData = []
-  
-  // Add others first (so they appear at the bottom of the bar chart)
-  otherClients.reverse().forEach(client => {
-    finalData.push(client)
-  })
-
-  // Add Local Client last (so it appears at the top of the bar chart)
-  if (localClientAmount >= 0 || otherClients.length === 0) {
-    finalData.push({ name: LOCAL_CLIENT_NAME, amount: localClientAmount })
-  }
-
-  return finalData
-}
-
-function mapBalanceData(sales: Sale[], compras: Compra[]) {
-  const dailyData: Record<string, { income: number; expense: number }> = {}
-  
-  // Agrupar ventas
-  sales.forEach(sale => {
-    if (sale.estado === "Cancelado") return;
-    
-    const dateStr = sale.creado_el.split(" ")[0]
-    if (!dailyData[dateStr]) {
-      dailyData[dateStr] = { income: 0, expense: 0 }
-    }
-    dailyData[dateStr].income += sale.pago
-  })
-
-  // Agrupar compras (gastos operativos)
-  compras.forEach(compra => {
-    if (!compra.creado_el) return;
-    
-    const dateStr = compra.creado_el.split(" ")[0]
-    if (!dailyData[dateStr]) {
-      dailyData[dateStr] = { income: 0, expense: 0 }
-    }
-    dailyData[dateStr].expense += compra.monto
-  })
-
-  // Obtener fechas únicas ordenadas
-  const uniqueDates = Object.keys(dailyData).sort()
-  
-  const formatter = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
-  
-  if (uniqueDates.length === 0) {
-    const last7Days: { date: string; income: number; expense: number }[] = []
-    const today = new Date()
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const weekday = formatter.format(date)
-      const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1)
-      const dd = date.getDate().toString().padStart(2, '0')
-      const mm = (date.getMonth() + 1).toString().padStart(2, '0')
-      const displayKey = `${capitalizedWeekday} ${dd}/${mm}`
-      last7Days.push({ date: displayKey, income: 0, expense: 0 })
-    }
-    return last7Days
-  }
-
-  // Encontrar la fecha más reciente y generar 7 días hacia atrás
-  const latestDateStr = [...uniqueDates].sort().reverse()[0]
-  const [latestYear, latestMonth, latestDay] = latestDateStr.split('-').map(Number)
-  const latestDate = new Date(latestYear, latestMonth - 1, latestDay)
-
-  const result: { date: string; income: number; expense: number }[] = []
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(latestDate)
-    date.setDate(date.getDate() - i)
-    
-    const yyyy = date.getFullYear()
-    const mm = (date.getMonth() + 1).toString().padStart(2, '0')
-    const dd = date.getDate().toString().padStart(2, '0')
-    const fullDateKey = `${yyyy}-${mm}-${dd}`
-    
-    const weekday = formatter.format(date)
-    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1)
-    const displayKey = `${capitalizedWeekday} ${dd}/${mm}`
-    
-    result.push({
-      date: displayKey,
-      income: dailyData[fullDateKey]?.income || 0,
-      expense: dailyData[fullDateKey]?.expense || 0
-    })
-  }
-  
-  return result
-}
-
-const { topClientsData, balanceData } = await (async () => {
-  try {
-    const [sales, clients, compras] = await Promise.all([
-      salesApi.getAll(),
-      clientsApi.getAll(),
-      comprasApi.getAll()
-    ])
-
-    const topClients = mapTopClientsData(sales)
-    const balance = mapBalanceData(sales, compras)
-
-    return { 
-      topClientsData: topClients,
-      balanceData: balance
-    }
-  } catch (error) {
-    console.error("Error fetching dashboard data:", error)
-    return { 
-      topClientsData: [],
-      balanceData: []
-    }
-  }
-})();
 ---
 
 <Layout title="Dashboard Comercial" showSidebar={false}>
@@ -151,9 +14,11 @@ const { topClientsData, balanceData } = await (async () => {
       <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-4">
         <NavigationPanel client:load />
         
-        {/* Gemarra Bot IA */}
+        {/* Atención por WhatsApp */}
         <a
-          href="/chatbot"
+          href="https://wa.me/message/ZR4KQO67FJRZD1"
+          target="_blank"
+          rel="noopener noreferrer"
           class="flex-1 cursor-pointer group relative overflow-hidden rounded-2xl bg-white border-2 border-[#30b7ff]/30 hover:border-[#30b7ff]/60 transition-all hover:shadow-lg hover:shadow-[#30b7ff]/10 flex items-center justify-center"
           style="animation: pulse-glow 2.5s ease-in-out infinite;"
         >
@@ -165,9 +30,9 @@ const { topClientsData, balanceData } = await (async () => {
               <span class="absolute -top-1 -right-1 text-lg">✨</span>
             </div>
             <div>
-              <p class="text-base font-bold text-indigo-900">Gamarra Bot IA</p>
+              <p class="text-base font-bold text-indigo-900">Atención por WhatsApp</p>
               <p class="text-sm text-indigo-500/80 mt-1 leading-relaxed max-w-[200px]">
-                Pregúntale sobre ventas, clientes, deudas y más. ¡Como hablar con tu contador!
+                Escríbenos para consultar ventas, clientes, deudas y más.
               </p>
             </div>
           </div>
@@ -190,8 +55,6 @@ const { topClientsData, balanceData } = await (async () => {
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
       <div class="lg:col-span-12 flex flex-col min-h-[400px]">
         <DashboardCharts 
-          topClientsData={topClientsData} 
-          balanceData={balanceData}
           client:load 
         />
       </div>

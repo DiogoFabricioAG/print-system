@@ -6,6 +6,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
       "Content-Type": "application/json",
       ...options?.headers,
     },
+    cache: "no-store",
     ...options,
   })
 
