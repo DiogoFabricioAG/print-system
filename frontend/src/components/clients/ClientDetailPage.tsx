@@ -298,15 +298,21 @@ export function ClientDetailPage() {
               <History className="w-4 h-4" />
             </div>
             <h3 className="text-sm font-semibold text-slate-600">
-              Última Compra
+              Último Pago
             </h3>
           </div>
           <p className="text-xl font-bold text-slate-900">
-            {formatDate(client.metricas.ultima_compra)}
+            {formatDate(client.metricas.ultimo_pago)}
           </p>
-          <p className="text-xs text-amber-600 mt-1 font-medium bg-amber-50 inline-block px-2 py-0.5 rounded-md">
-            Hace {client.metricas.dias_desde_ultima_compra} días
-          </p>
+          {client.metricas.ultimo_pago ? (
+            <p className="text-xs text-amber-600 mt-1 font-medium bg-amber-50 inline-block px-2 py-0.5 rounded-md">
+              Hace {client.metricas.dias_desde_ultimo_pago} días
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400 mt-1 font-medium inline-block px-2 py-0.5 rounded-md">
+              Sin abonos registrados
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">

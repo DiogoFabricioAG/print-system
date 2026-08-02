@@ -58,6 +58,8 @@ export interface ClientDetail {
     total_pagos: number
     ultima_compra: string
     dias_desde_ultima_compra: number
+    ultimo_pago: string
+    dias_desde_ultimo_pago: number
     debe: boolean
   }
   historial: Array<{
