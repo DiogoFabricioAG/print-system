@@ -96,6 +96,9 @@ export function SellsTable({
                 Diseño
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">
+                Metro
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">
                 Pago
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">
@@ -130,6 +133,9 @@ export function SellsTable({
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
                   {sell.design}
+                </TableCell>
+                <TableCell className="text-slate-600 py-4 px-6 tabular-nums whitespace-nowrap">
+                  {sell.metro_total != null ? `${sell.metro_total} m` : "-"}
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
                   S/ {sell.amount.toLocaleString("es-PE")}
@@ -182,7 +188,7 @@ export function SellsTable({
             {sells.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={7}
                   className="h-32 text-center text-slate-500"
                 >
                   No se encontraron ventas.

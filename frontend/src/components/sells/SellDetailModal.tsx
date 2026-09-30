@@ -11,7 +11,6 @@ import {
   Scissors,
   CalendarDays,
   MonitorPlay,
-  Ruler,
   PackageOpen,
   StickyNote,
 } from "lucide-react";
@@ -161,21 +160,13 @@ export function SellDetailModal({
             </div>
 
             {/* Detalles Técnicos */}
-            <div className="p-5 bg-slate-50/50 grid grid-cols-3 gap-4">
+            <div className="p-5 bg-slate-50/50 grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <PackageOpen className="w-3.5 h-3.5" /> Cant.
                 </p>
                 <p className="font-medium text-slate-700">
                   {sell.cantidad || "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Ruler className="w-3.5 h-3.5" /> Metro
-                </p>
-                <p className="font-medium text-slate-700">
-                  {sell.metro_total ? `${sell.metro_total} m` : "-"}
                 </p>
               </div>
               <div>
