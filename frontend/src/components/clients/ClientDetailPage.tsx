@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { clientsApi, pagosApi, type ClientDetail } from "@/lib/api";
 import { showToast } from "@/lib/toast";
+import { formatBusinessDate, getLimaDateKey } from "@/lib/business-date";
 import {
   Table,
   TableBody,
@@ -167,10 +168,7 @@ export function ClientDetailPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return dateString.split(" ")[0];
-  };
+  const formatDate = formatBusinessDate;
 
   const getInsights = (client: ClientDetail) => {
     const totalOrders = client.historial.filter(
@@ -569,7 +567,7 @@ export function ClientDetailPage() {
                     id="fecha"
                     name="fecha"
                     type="date"
-                    defaultValue={new Date().toISOString().split("T")[0]}
+                    defaultValue={getLimaDateKey()}
                     className="rounded-xl border-slate-200 focus-visible:ring-emerald-500"
                   />
                 </div>

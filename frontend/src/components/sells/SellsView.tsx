@@ -8,6 +8,7 @@ import { RegisterSellModal } from "./RegisterSellModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
 import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
+import { getBusinessDateKey, getCalendarDateKey } from "@/lib/business-date"
 
 const ITEMS_TO_LOAD = 15
 
@@ -24,7 +25,7 @@ function mapSaleToViewModel(sale: Sale): SellData {
     clientId: sale.cliente_id,
     amount: sale.pago,
     status: sale.estado,
-    date: sale.fecha || sale.creado_el.split(" ")[0],
+    date: getBusinessDateKey(sale.fecha) ?? getBusinessDateKey(sale.creado_el) ?? "",
     nota: sale.nota,
     cantidad: sale.cantidad,
     metro_total: sale.metro_total,
@@ -103,12 +104,11 @@ export function SellsView() {
 
     if (dateRange.from || dateRange.to) {
       result = result.filter(sell => {
-        const sellDate = new Date(sell.date)
-        const from = dateRange.from ? new Date(dateRange.from) : null
-        const to = dateRange.to ? new Date(dateRange.to) : null
-        
-        if (from && sellDate < from) return false
-        if (to && sellDate > to) return false
+        const from = dateRange.from ? getCalendarDateKey(dateRange.from) : null
+        const to = dateRange.to ? getCalendarDateKey(dateRange.to) : null
+
+        if (from && sell.date < from) return false
+        if (to && sell.date > to) return false
         return true
       })
     }

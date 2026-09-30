@@ -1,4 +1,5 @@
 import type { Compra, Sale } from "./api";
+import { BUSINESS_TIME_ZONE, getBusinessDateKey, getLimaDateKey } from "./business-date";
 
 export interface TopClientData {
   name: string;
@@ -9,53 +10,6 @@ export interface BalanceData {
   date: string;
   income: number;
   expense: number;
-}
-
-const BUSINESS_TIME_ZONE = "America/Bogota";
-
-function dateKeyFromParts(parts: Intl.DateTimeFormatPart[]): string {
-  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
-function formatDateKeyInBusinessTimeZone(date: Date): string {
-  return dateKeyFromParts(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: BUSINESS_TIME_ZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(date),
-  );
-}
-
-/**
- * Converts a stored date to the business date used by the dashboard.
- * Explicit sale dates are date-only values; created_at timestamps are UTC.
- */
-export function getBusinessDateKey(value?: string | null): string | null {
-  if (!value) return null;
-
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  const hasTimeZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
-  const normalized = trimmed.includes("T")
-    ? hasTimeZone
-      ? trimmed
-      : `${trimmed}Z`
-    : `${trimmed.replace(" ", "T")}Z`;
-  const parsed = new Date(normalized);
-
-  if (!Number.isNaN(parsed.getTime())) {
-    return formatDateKeyInBusinessTimeZone(parsed);
-  }
-
-  return trimmed.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? null;
 }
 
 function dateKeyToUtcDate(dateKey: string): Date {
@@ -134,7 +88,7 @@ export function mapBalanceData(sales: Sale[], compras: Compra[]): BalanceData[] 
     ensureDay(dateKey).expense += Number(compra.monto) || 0;
   });
 
-  const today = formatDateKeyInBusinessTimeZone(new Date());
+  const today = getLimaDateKey();
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = addDays(today, index - 6);
     const day = dailyData[dateKey] ?? { income: 0, expense: 0 };

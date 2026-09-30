@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { formatBusinessDate } from "@/lib/business-date";
 
 export interface SellData {
   id: string;
@@ -68,7 +69,7 @@ export function SellsTable({
           onLoadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "150px" }
+      { threshold: 0.1, rootMargin: "150px" },
     );
 
     const currentTarget = observerTarget.current;
@@ -148,7 +149,7 @@ export function SellsTable({
                   </span>
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
-                  {sell.date}
+                  {formatBusinessDate(sell.date)}
                 </TableCell>
                 <TableCell className="text-right py-4 px-6">
                   <div className="flex justify-end gap-2">

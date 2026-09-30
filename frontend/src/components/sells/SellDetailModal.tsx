@@ -1,4 +1,5 @@
 import * as React from "react";
+import { formatBusinessDate } from "@/lib/business-date";
 import {
   Dialog,
   DialogContent,
@@ -27,21 +28,6 @@ export function SellDetailModal({
   onClose,
 }: SellDetailModalProps) {
   if (!sell) return null;
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    // Comprobar si ya viene en formato YYYY-MM-DD
-    if (dateString.includes("-") && dateString.length === 10) {
-      const [y, m, d] = dateString.split("-");
-      return `${d}/${m}/${y}`;
-    }
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, { bg: string; text: string; border: string }> =
@@ -139,7 +125,7 @@ export function SellDetailModal({
                   Fecha
                 </p>
                 <p className="font-bold text-slate-800 leading-tight">
-                  {formatDate(sell.date)}
+                  {formatBusinessDate(sell.date)}
                 </p>
               </div>
             </div>

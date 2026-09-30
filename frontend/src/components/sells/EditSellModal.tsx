@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import type { SellData } from "./SellsTable";
+import { getBusinessDateKey, getLimaDateKey } from "@/lib/business-date";
 
 interface EditSellModalProps {
   sell: SellData | null;
@@ -58,23 +59,7 @@ export function EditSellModal({
       setStatus(sell.status);
       setNota(sell.nota || "");
 
-      // La fecha en `sell.date` podría venir como `YYYY-MM-DD` o un string de fecha largo
-      // Necesitamos asegurar que el input type="date" reciba `YYYY-MM-DD`
-      let formattedDate = "";
-      if (sell.date) {
-        if (sell.date.includes("-") && sell.date.length >= 10) {
-          formattedDate = sell.date.substring(0, 10);
-        } else {
-          // Fallback por si la fecha viene en otro formato que Date pueda parsear
-          try {
-            const d = new Date(sell.date);
-            if (!isNaN(d.getTime())) {
-              formattedDate = d.toISOString().split("T")[0];
-            }
-          } catch (e) {}
-        }
-      }
-      setFecha(formattedDate || new Date().toISOString().split("T")[0]);
+      setFecha(getBusinessDateKey(sell.date) ?? getLimaDateKey());
     }
   }, [sell]);
 

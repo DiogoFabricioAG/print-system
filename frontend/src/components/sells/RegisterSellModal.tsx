@@ -15,6 +15,7 @@ import { Loader2, FileText, ChevronLeft, ChevronRight, DollarSign } from "lucide
 import type { Client } from "@/lib/api";
 import { salesApi, pagosApi } from "@/lib/api";
 import { showToast } from "@/lib/toast";
+import { getLimaDateKey } from "@/lib/business-date";
 
 interface RegisterSellModalProps {
   isOpen: boolean;
@@ -466,7 +467,7 @@ export function RegisterSellModal({
                 </div>
                 <div className="space-y-1 sm:space-y-1.5">
                   <Label htmlFor="fecha" className="text-slate-700 font-semibold text-xs sm:text-sm">Fecha</Label>
-                  <Input id="fecha" name="fecha" type="date" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" defaultValue={new Date().toISOString().split("T")[0]} />
+                  <Input id="fecha" name="fecha" type="date" className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" defaultValue={getLimaDateKey()} />
                 </div>
               </div>
 
