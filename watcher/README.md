@@ -59,7 +59,11 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 
 ## Mover a otra máquina
 
-1. Copia la carpeta `watcher/` al equipo destino (o clona el repo). **`.env` no se versiona**: llévalo aparte o créalo allí.
+`.env` no se versiona: llévalo aparte (contiene la API key).
+
+### Opción A — con Python instalado
+
+1. Copia la carpeta `watcher/` al equipo destino (o clona el repo).
 2. Instala Python 3.10+ (el instalador oficial de Windows incluye Tkinter) y crea el venv:
    ```powershell
    cd watcher
@@ -77,6 +81,22 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
    powershell -ExecutionPolicy Bypass -File .\install-task.ps1
    ```
 6. Opcional: pon `GUI_ENABLED=false` si esa máquina no tendrá sesión interactiva (los casos dudosos irán a `pendientes/`).
+
+### Opción B — sin Python en la máquina destino (exe portable)
+
+1. En una máquina con Python (p. ej. esta), construye el ejecutable:
+   ```powershell
+   cd watcher
+   powershell -ExecutionPolicy Bypass -File .\build-exe.ps1
+   ```
+   Genera `dist\PrintSystemWatcher.exe` (no requiere Python en el destino).
+2. Copia a la máquina destino, **en la misma carpeta**: `PrintSystemWatcher.exe` + tu `.env` (ajusta `WATCH_ROOT`/`WATCH_FOLDER` de esa máquina).
+3. Registra la tarea apuntando al ejecutable:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\install-task.ps1 -ExePath "C:\ruta\PrintSystemWatcher.exe"
+   ```
+   > Puedes copiar también `install-task.ps1`/`uninstall-task.ps1` a esa carpeta para gestionarla, o registrar la tarea manualmente en el Programador de tareas (al iniciar sesión, ejecutar el exe).
+4. Notas del exe: arranca en 1-3 s (onefile); algunos antivirus pueden marcarlo la primera vez (agrega excepción); para actualizar, reconstruye aquí y reemplaza el `.exe`.
 
 > La misma API key funciona desde cualquier máquina; si necesitas revocar el acceso de una, rótala con `npm run api-key` (functions/) y actualiza el `.env` de las máquinas vigentes.
 

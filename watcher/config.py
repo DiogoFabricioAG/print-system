@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, "frozen", False):
+    # Ejecutable PyInstaller: el .env vive junto al .exe
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent
 
 ESTADOS_VALIDOS = ("Debe", "Crédito", "Pagó")
 

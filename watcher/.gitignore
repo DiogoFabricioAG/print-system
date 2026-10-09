@@ -5,3 +5,7 @@ __pycache__/
 state.db
 state.db-*
 logs/
+watcher-emit-error.log
+build/
+dist/
+*.spec

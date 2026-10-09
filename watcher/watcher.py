@@ -32,7 +32,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from api_client import ApiClient, ApiError
-from config import Config, ConfigError, load_config
+from config import BASE_DIR, Config, ConfigError, load_config
 from parser import (
     FilenameParseError,
     ParsedVenta,
@@ -710,6 +710,36 @@ def setup_logging(cfg: Config) -> None:
         root.addHandler(console)
 
 
+def _emit(text: str, stream=None) -> None:
+    """Escribe en consola; en el exe (windowed) muestra un diálogo."""
+    if not getattr(sys, "frozen", False):
+        target = stream if stream is not None else sys.stdout
+        if target is not None:
+            try:
+                target.write(text if text.endswith("\n") else text + "\n")
+                return
+            except Exception:  # noqa: BLE001
+                pass
+
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showinfo("Print System Watcher", text)
+        root.destroy()
+    except Exception:  # noqa: BLE001
+        try:
+            import traceback
+
+            with (BASE_DIR / "watcher-emit-error.log").open("a", encoding="utf-8") as fh:
+                fh.write(f"--- {datetime.now(timezone.utc).isoformat()} ---\n")
+                traceback.print_exc(file=fh)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
@@ -718,20 +748,19 @@ def main(argv: list[str] | None = None) -> int:
         try:
             venta = parse_filename(args.validate, cfg)
         except FilenameParseError as exc:
-            print(f"INVÁLIDO: {exc}")
+            _emit(f"INVÁLIDO: {exc}", sys.stderr)
             return 1
-        print("VÁLIDO:")
-        print(json.dumps(venta.to_dict(), ensure_ascii=False, indent=2))
+        _emit("VÁLIDO:\n" + json.dumps(venta.to_dict(), ensure_ascii=False, indent=2))
         return 0
 
     try:
         cfg = load_config()
     except ConfigError as exc:
-        print(f"Error de configuración: {exc}", file=sys.stderr)
+        _emit(f"Error de configuración: {exc}", sys.stderr)
         return 2
 
     if args.stats:
-        print(json.dumps(State(cfg.db_path).stats(), ensure_ascii=False, indent=2))
+        _emit(json.dumps(State(cfg.db_path).stats(), ensure_ascii=False, indent=2))
         return 0
 
     cfg.ensure_folders()
@@ -766,7 +795,7 @@ def main(argv: list[str] | None = None) -> int:
             service.process_existing()
             summary = json.dumps(service.counter, ensure_ascii=False)
             log.info("--once terminado: %s", summary)
-            print(summary)
+            _emit(summary)
             return 0
 
         observer = Observer()
