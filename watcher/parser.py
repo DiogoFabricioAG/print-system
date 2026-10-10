@@ -1,4 +1,4 @@
-"""Parser de la convención estricta de nombres PNG y validación de archivos.
+"""Parser de la convención estricta de nombres PNG y validación de extensión.
 
 Convención:
     [YYYY-MM-DD__]CLIENTE__DISEÑO__CANTIDAD__METROS__MAQUINA__MONTO[__ESTADO].png
@@ -17,8 +17,6 @@ from datetime import datetime
 from pathlib import Path
 
 from config import Config
-
-PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 _DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 _CANTIDAD_RE = re.compile(r"^\d+(?:[.,]\d+)?\s*[a-zA-ZñÑáéíóúÁÉÍÓÚ.]*$")
@@ -167,24 +165,12 @@ def parse_filename(filename: str, cfg: Config) -> ParsedVenta:
     )
 
 
-def validate_png(path: Path) -> tuple[bool, str]:
-    try:
-        size = path.stat().st_size
-    except OSError as exc:
-        return False, f"no se pudo leer el archivo: {exc}"
-
-    if size == 0:
-        return False, "el archivo está vacío"
-
-    try:
-        with path.open("rb") as handle:
-            header = handle.read(len(PNG_MAGIC))
-    except OSError as exc:
-        return False, f"no se pudo abrir el archivo: {exc}"
-
-    if header != PNG_MAGIC:
-        return False, "no es un PNG válido (firma incorrecta)"
-
+def validate_png_extension(path: Path) -> tuple[bool, str]:
+    """Valida que sea un archivo con sufijo .png; no inspecciona el contenido."""
+    if not path.is_file():
+        return False, "la ruta no es un archivo"
+    if path.suffix.lower() != ".png":
+        return False, "la extensión debe ser .png"
     return True, ""
 
 

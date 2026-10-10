@@ -5,7 +5,7 @@ Vigila una carpeta local y **registra una venta en Print System cada vez que apa
 ```
 entrada/nuevo.png
   → watchdog detecta el archivo y espera a que esté estable
-  → valida PNG + parsea el nombre (convención estricta)
+  → valida que el nombre termine en .png + parsea el nombre
   → resuelve el cliente (si no existe, popup Tkinter: similar / crear / ignorar)
   → POST /api/ventas [+ POST /api/pagos si estado = Pagó]
   → clave de idempotencia en SQLite + mueve el archivo a procesados/
@@ -35,7 +35,7 @@ SR PABLO__logo circular__10uni__1.5mts__DTF__S50.png
 2026-10-08__JHONATAN__polo navidad__2polos__150cm__impresion__S120__Pagó.png
 ```
 
-> El separador por defecto es `__` (doble guion bajo) y se puede cambiar con `SEPARATOR` en `.env` (ej. `SEPARATOR=--`, útil para compartir el formato sin que WhatsApp lo ponga en cursiva). Un nombre fuera de convención abre un **formulario Tkinter** para completar la venta a mano (o va a `pendientes/` si la GUI está desactivada).
+> El watcher comprueba la extensión `.png`, pero no inspecciona ni convierte el contenido: un TIFF que termine en `.png` también pasa. El separador por defecto es `__` (doble guion bajo) y se puede cambiar con `SEPARATOR` en `.env` (ej. `SEPARATOR=--`, útil para compartir el formato sin que WhatsApp lo ponga en cursiva). Un nombre fuera de convención abre un **formulario Tkinter** para completar la venta a mano (o va a `pendientes/` si la GUI está desactivada).
 
 ## Instalación
 
@@ -138,7 +138,7 @@ powershell -ExecutionPolicy Bypass -File .\uninstall-task.ps1
 <WATCH_ROOT>\
 ├── entrada\      PNG a procesar (solo si WATCH_FOLDER no está definido)
 ├── procesados\   ventas registradas correctamente
-├── rechazados\   PNG inválidos o ignorados (+ <archivo>.motivo.txt)
+├── rechazados\   nombres inválidos o archivos ignorados (+ <archivo>.motivo.txt)
 ├── pendientes\   requieren revisión manual (API caída tras reintentos, sin GUI, etc.)
 ├── logs\         watcher.log (rotativo)
 └── state.db      SQLite: procesados, reintentos y pendientes

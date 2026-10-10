@@ -38,7 +38,7 @@ from parser import (
     ParsedVenta,
     build_nota,
     parse_filename,
-    validate_png,
+    validate_png_extension,
 )
 from state import State
 
@@ -168,7 +168,11 @@ class WatcherService:
             self._stop.wait(5.0)
 
     def process_existing(self) -> None:
-        paths = sorted(self.cfg.entrada.glob("*.png"))
+        paths = sorted(
+            path
+            for path in self.cfg.entrada.iterdir()
+            if path.is_file() and path.suffix.lower() == ".png"
+        )
         log.info("--once: %d archivo(s) encontrados en %s", len(paths), self.cfg.entrada)
         for path in paths:
             if self._stop.is_set():
@@ -210,7 +214,7 @@ class WatcherService:
             self._move(path, self.cfg.procesados)
             return
 
-        ok, reason = validate_png(path)
+        ok, reason = validate_png_extension(path)
         if not ok:
             self._to_rejected(path, reason)
             return
