@@ -82,6 +82,7 @@ class Config:
     api_url: str
     api_key: str
     watch_folder: Path | None = None
+    separator: str = "__"
     estado_default: str = "Debe"
     gui_enabled: bool = True
     gui_timeout: float = 600.0
@@ -162,6 +163,10 @@ def load_config(require_api_key: bool = True) -> Config:
 
     watch_folder_raw = (os.environ.get("WATCH_FOLDER") or "").strip()
 
+    separator = (os.environ.get("SEPARATOR") or "__").strip() or "__"
+    if any(char in separator for char in '<>:"/\\|?*'):
+        raise ConfigError(f"SEPARATOR contiene caracteres inválidos para nombres de archivo: {separator!r}")
+
     return Config(
         watch_root=Path(os.environ.get("WATCH_ROOT", r"C:\PrintSystem\ventas")),
         api_url=os.environ.get(
@@ -169,6 +174,7 @@ def load_config(require_api_key: bool = True) -> Config:
         ).rstrip("/"),
         api_key=api_key,
         watch_folder=Path(watch_folder_raw) if watch_folder_raw else None,
+        separator=separator,
         estado_default=estado_default,
         gui_enabled=_env_bool("GUI_ENABLED", True),
         gui_timeout=_env_float("GUI_TIMEOUT", 600.0),

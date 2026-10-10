@@ -19,7 +19,6 @@ from pathlib import Path
 from config import Config
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
-SEPARATOR = "__"
 
 _DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 _CANTIDAD_RE = re.compile(r"^\d+(?:[.,]\d+)?\s*[a-zA-ZñÑáéíóúÁÉÍÓÚ.]*$")
@@ -100,11 +99,11 @@ def parse_monto(token: str) -> float | None:
 
 def parse_filename(filename: str, cfg: Config) -> ParsedVenta:
     stem = Path(filename).stem
-    tokens = [token.strip() for token in stem.split(SEPARATOR)]
+    tokens = [token.strip() for token in stem.split(cfg.separator)]
 
     if any(token == "" for token in tokens):
         raise FilenameParseError(
-            f"contiene un campo vacío (revisa los separadores '{SEPARATOR}')"
+            f"contiene un campo vacío (revisa los separadores '{cfg.separator}')"
         )
 
     fecha: str | None = None
@@ -125,9 +124,12 @@ def parse_filename(filename: str, cfg: Config) -> ParsedVenta:
                 f"estado inválido: {tokens[6]!r} (usar: Debe, Crédito o Pagó)"
             )
     else:
+        fields = cfg.separator.join(
+            ("CLIENTE", "DISEÑO", "CANTIDAD", "METROS", "MAQUINA", "MONTO")
+        )
         raise FilenameParseError(
-            "se esperaban 6 campos (CLIENTE__DISEÑO__CANTIDAD__METROS__MAQUINA__MONTO) "
-            f"y opcionalmente estado; se encontraron {len(tokens)}"
+            f"se esperaban 6 campos ({fields}) y opcionalmente estado; "
+            f"se encontraron {len(tokens)}"
         )
 
     cliente = tokens[0]

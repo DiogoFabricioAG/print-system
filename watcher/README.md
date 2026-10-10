@@ -35,7 +35,7 @@ SR PABLO__logo circular__10uni__1.5mts__DTF__S50.png
 2026-10-08__JHONATAN__polo navidad__2polos__150cm__impresion__S120__Pagó.png
 ```
 
-> El separador es `__` (doble guion bajo). Un nombre fuera de convención abre un **formulario Tkinter** para completar la venta a mano (o va a `pendientes/` si la GUI está desactivada).
+> El separador por defecto es `__` (doble guion bajo) y se puede cambiar con `SEPARATOR` en `.env` (ej. `SEPARATOR=--`, útil para compartir el formato sin que WhatsApp lo ponga en cursiva). Un nombre fuera de convención abre un **formulario Tkinter** para completar la venta a mano (o va a `pendientes/` si la GUI está desactivada).
 
 ## Instalación
 
