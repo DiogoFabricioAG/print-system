@@ -304,7 +304,7 @@ class ResolverGUI:
 
         # ── header ──
         if is_form:
-            self._header(
+            header = self._header(
                 top,
                 "Nombre fuera de convención",
                 payload.get("filename", ""),
@@ -313,7 +313,7 @@ class ResolverGUI:
                 chip_fg=C["chip_error_text"],
             )
         else:
-            self._header(
+            header = self._header(
                 top,
                 "Cliente no encontrado",
                 payload.get("filename", ""),
@@ -325,9 +325,43 @@ class ResolverGUI:
         footer.pack(fill="x", side="bottom")
         tk.Frame(top, bg=C["border"], height=1).pack(fill="x", side="bottom")
 
-        # ── cuerpo ──
-        body = tk.Frame(top, bg=C["bg"], padx=22, pady=16)
-        body.pack(fill="both", expand=True)
+        # ── cuerpo scrollable (el contenido puede exceder la pantalla) ──
+        content = tk.Frame(top, bg=C["bg"])
+        content.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(content, bg=C["bg"], highlightthickness=0, bd=0)
+        scrollbar = self._ttk.Scrollbar(content, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+
+        body = tk.Frame(canvas, bg=C["bg"], padx=22, pady=16)
+        body_window = canvas.create_window((0, 0), window=body, anchor="nw")
+
+        def _sync_scroll() -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            if body.winfo_reqheight() <= canvas.winfo_height():
+                scrollbar.pack_forget()
+            else:
+                scrollbar.pack(side="right", fill="y")
+
+        def _on_body_configure(_event) -> None:
+            _sync_scroll()
+
+        def _on_canvas_configure(event) -> None:
+            canvas.itemconfigure(body_window, width=event.width)
+            _sync_scroll()
+
+        def _on_wheel(event) -> None:
+            canvas.yview_scroll(int(-event.delta / 120), "units")
+
+        def _on_destroy(event) -> None:
+            if event.widget is top:
+                top.unbind_all("<MouseWheel>")
+
+        body.bind("<Configure>", _on_body_configure)
+        canvas.bind("<Configure>", _on_canvas_configure)
+        top.bind_all("<MouseWheel>", _on_wheel)
+        top.bind("<Destroy>", _on_destroy)
 
         if is_form:
             tk.Label(
@@ -704,8 +738,17 @@ class ResolverGUI:
             padx=14,
         ).pack(side="right", padx=(0, 8))
 
-        # ── mostrar ──
-        width, height = (720, 700) if is_form else (680, 560)
+        # ── mostrar (alto ajustado al contenido, con tope de pantalla) ──
+        top.update_idletasks()
+        width = 720 if is_form else 680
+        desired_height = (
+            header.winfo_reqheight()
+            + body.winfo_reqheight()
+            + footer.winfo_reqheight()
+            + 12
+        )
+        screen_height = top.winfo_screenheight()
+        height = max(min(desired_height, screen_height - 80), 420)
         self._center(top, width, height)
         top.deiconify()
         top.lift()
