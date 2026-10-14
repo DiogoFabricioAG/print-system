@@ -74,16 +74,28 @@ def main() -> int:
         print("Usando 4 clientes de ejemplo (sin API).")
 
     print()
-    print("== Dialogo 1/2: 'Cliente no encontrado' ==")
-    print("   Arriba: sugerencias (★ con %). Abajo: todos los clientes.")
-    print("   Usa el campo 'Buscar' para filtrar. Enter = confirmar, Esc = cerrar.")
+    print("== Dialogo 1/2: revisar y confirmar una venta parseada ==")
+    print("   Puedes cambiar los datos; el nombre del archivo no se modifica.")
     r1 = gui.request(
         {
-            "kind": "cliente",
-            "filename": f"{EJEMPLO_NOMBRE}__logo circular__10uni__1.5mts__DTF__S50.png",
+            "kind": "review",
+            "filename": f"logo circular - {EJEMPLO_NOMBRE} - 10uni - 1.5mts - S50 - DTF.png",
             "nombre": EJEMPLO_NOMBRE,
+            "error": None,
             "clientes": clientes,
             "sugerencias": sugerencias,
+            "selected_client_id": None,
+            "prefill": {
+                "diseno": "logo circular",
+                "cliente": EJEMPLO_NOMBRE,
+                "cantidad": "10uni",
+                "metro_total": 1.5,
+                "maquina": "DTF",
+                "pago": 50.0,
+                "estado": "Debe",
+                "fecha": None,
+            },
+            "dry_run": True,
         }
     )
     print("   respuesta:", r1)
@@ -92,11 +104,11 @@ def main() -> int:
     print("== Dialogo 2/2: 'Nombre fuera de convencion' (formulario completo) ==")
     r2 = gui.request(
         {
-            "kind": "form",
+            "kind": "review",
             "filename": "prueba sin formato.png",
             "error": (
                 "se esperaban 6 campos "
-                "(CLIENTE__DISENO__CANTIDAD__METROS__MAQUINA__MONTO); se encontraron 1"
+                "(DISEÑO - CLIENTE - CANTIDAD - METRAJE - PAGO - MAQUINA); se encontraron 1"
             ),
             "clientes": clientes,
             "sugerencias": [],

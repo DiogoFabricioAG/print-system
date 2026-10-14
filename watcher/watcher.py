@@ -2,13 +2,13 @@
 """Watcher EDA: cada PNG nuevo en entrada/ registra una venta en Print System.
 
 Convención de nombre:
-    [YYYY-MM-DD__]CLIENTE__DISEÑO__CANTIDAD__METROS__MAQUINA__MONTO[__ESTADO].png
+    DISEÑO - CLIENTE - CANTIDAD - METRAJE - PAGO - MAQUINA.png
 
 Uso:
     python watcher.py               # vigila entrada/ en primer plano
     python watcher.py --once        # procesa lo existente y sale
     python watcher.py --dry-run     # parsea y resuelve, sin enviar nada a la API
-    python watcher.py --validate "SR PABLO__logo__10uni__1.5mts__DTF__S50.png"
+    python watcher.py --validate "logo - SR PABLO - 10uni - 1.5mts - 50 soles - DTF.png"
     python watcher.py --stats
 """
 
@@ -219,92 +219,46 @@ class WatcherService:
             self._to_rejected(path, reason)
             return
 
+        venta: ParsedVenta | None = None
+        parse_error: str | None = None
         try:
             venta = parse_filename(path.name, self.cfg)
         except FilenameParseError as exc:
-            self._handle_parse_error(path, file_hash, str(exc))
-            return
+            parse_error = str(exc)
+            log.warning("Nombre fuera de convención (%s): %s", path.name, parse_error)
 
         try:
-            cliente = self._resolve_cliente(path, file_hash, venta.cliente)
+            clientes = self.api.list_clientes()
+            cliente_detectado = None
+            sugerencias: list[tuple[dict, float]] = []
+            if venta is not None:
+                cliente_detectado = self.api.find_cliente(venta.cliente)
+                sugerencias = self.api.suggest_clientes(venta.cliente)
         except ApiError as exc:
-            self._handle_api_error(path, file_hash, "cliente", {"nombre": venta.cliente}, exc)
+            self._handle_api_error(path, file_hash, "clientes", {"archivo": path.name}, exc)
             return
 
-        if cliente is False:
-            return  # ignorado por el usuario
-        if cliente is None:
-            return  # ya derivado a pendientes
-
-        self._register(path, file_hash, venta, cliente)
-    def _resolve_cliente(self, path: Path, file_hash: str, nombre: str):
-        """Devuelve el dict del cliente, False si se ignoró, o None si va a pendientes."""
-        cliente = self.api.find_cliente(nombre)
-        if cliente is not None:
-            return cliente
-
-        log.info("Cliente no encontrado: %r", nombre)
+        # Cada PNG requiere confirmación explícita; sin GUI interactiva no se
+        # registra en segundo plano, se conserva en pendientes/.
         if self.gui is None or not self.gui.available:
-            self._to_pending(path, file_hash, f"cliente no encontrado: {nombre}")
-            return None
-
-        resolution = self.gui.request(
-            {
-                "kind": "cliente",
-                "filename": path.name,
-                "nombre": nombre,
-                "clientes": self.api.list_clientes(),
-                "sugerencias": self.api.suggest_clientes(nombre),
-            }
-        )
-        if resolution is None:
-            self._to_pending(path, file_hash, "el diálogo expiró sin respuesta")
-            return None
-
-        accion = resolution.get("accion")
-        if accion == "ignorar":
-            self._to_rejected(path, "ignorado por el usuario")
-            return False
-        if accion == "usar":
-            return resolution.get("cliente")
-
-        if accion == "crear":
-            try:
-                cliente = self.api.create_cliente(**resolution["datos"])
-                log.info(
-                    "Cliente creado: %s (id=%s)",
-                    cliente.get("nombre"),
-                    cliente.get("id"),
-                )
-                return cliente
-            except ApiError as exc:
-                self._handle_api_error(
-                    path, file_hash, "cliente", {"datos": resolution["datos"]}, exc
-                )
-                return None
-
-        self._to_pending(path, file_hash, "resolución de cliente inválida")
-        return None
-
-    def _handle_parse_error(self, path: Path, file_hash: str, reason: str) -> None:
-        log.warning("Nombre fuera de convención (%s): %s", path.name, reason)
-
-        if self.gui is None or not self.gui.available:
-            self._to_pending(path, file_hash, f"nombre fuera de convención: {reason}")
+            self._to_pending(path, file_hash, "requiere confirmación Tkinter; GUI no disponible")
             return
 
         resolution = self.gui.request(
             {
-                "kind": "form",
+                "kind": "review",
                 "filename": path.name,
-                "nombre": None,
-                "error": reason,
-                "clientes": self.api.list_clientes(),
-                "sugerencias": [],
+                "nombre": venta.cliente if venta is not None else None,
+                "error": parse_error,
+                "clientes": clientes,
+                "sugerencias": sugerencias,
+                "selected_client_id": cliente_detectado.get("id") if cliente_detectado else None,
+                "prefill": venta.to_dict() if venta is not None else {},
+                "dry_run": self.dry_run,
             }
         )
         if resolution is None:
-            self._to_pending(path, file_hash, "el formulario expiró sin respuesta")
+            self._to_pending(path, file_hash, "el diálogo de confirmación expiró")
             return
 
         accion = resolution.get("accion")
@@ -312,39 +266,46 @@ class WatcherService:
             self._to_rejected(path, "ignorado por el usuario")
             return
         if accion != "registrar":
-            self._to_pending(path, file_hash, "formulario cancelado")
+            self._to_pending(path, file_hash, "confirmación cancelada")
             return
 
         cliente = resolution.get("cliente")
         nuevo = resolution.get("nuevo_cliente")
         if nuevo:
-            try:
-                cliente = self.api.create_cliente(
-                    nuevo["nombre"],
-                    nuevo.get("numero"),
-                    nuevo.get("descripcion"),
-                )
-                log.info("Cliente creado: %s (id=%s)", cliente.get("nombre"), cliente.get("id"))
-            except ApiError as exc:
-                self._handle_api_error(path, file_hash, "cliente", {"datos": nuevo}, exc)
-                return
+            if self.dry_run:
+                cliente = {"id": None, "nombre": nuevo["nombre"]}
+                log.info("[DRY-RUN] también se crearía el cliente: %s", nuevo["nombre"])
+            else:
+                try:
+                    cliente = self.api.create_cliente(
+                        nuevo["nombre"],
+                        nuevo.get("numero"),
+                        nuevo.get("descripcion"),
+                    )
+                    log.info(
+                        "Cliente creado: %s (id=%s)", cliente.get("nombre"), cliente.get("id")
+                    )
+                except ApiError as exc:
+                    self._handle_api_error(path, file_hash, "cliente", {"datos": nuevo}, exc)
+                    return
 
         if not cliente:
-            self._to_pending(path, file_hash, "sin cliente seleccionado en el formulario")
+            self._to_pending(path, file_hash, "sin cliente confirmado")
             return
 
         data = resolution.get("venta") or {}
-        venta = ParsedVenta(
+        venta_confirmada = ParsedVenta(
             cliente=cliente.get("nombre", ""),
-            diseno=data.get("diseno", ""),
+            diseno=data.get("diseno", "").strip(),
             cantidad=data.get("cantidad"),
             metro_total=data.get("metro_total"),
-            maquina=data.get("maquina"),
+            maquina=data.get("maquina", "").strip() or None,
             pago=float(data.get("pago") or 0),
-            estado=data.get("estado") or self.cfg.estado_default,
-            fecha=data.get("fecha"),
+            estado=data.get("estado") or "Debe",
+            fecha=None,
+            adelanto=data.get("adelanto"),
         )
-        self._register(path, file_hash, venta, cliente)
+        self._register(path, file_hash, venta_confirmada, cliente)
 
     def _register(self, path: Path, file_hash: str, venta: ParsedVenta, cliente: dict) -> None:
         payload: dict = {
@@ -363,6 +324,15 @@ class WatcherService:
         if venta.fecha:
             payload["fecha"] = venta.fecha
 
+        pago_a_registrar: float | None = None
+        nota_pago: str | None = None
+        if venta.estado == "Pagó":
+            pago_a_registrar = venta.pago
+            nota_pago = "Pago total"
+        elif venta.estado == "Crédito" and venta.adelanto:
+            pago_a_registrar = venta.adelanto
+            nota_pago = "Adelanto"
+
         if self.dry_run:
             log.info(
                 "[DRY-RUN] venta que se registraría → cliente=%s id=%s payload=%s",
@@ -370,6 +340,12 @@ class WatcherService:
                 cliente.get("id"),
                 json.dumps(payload, ensure_ascii=False),
             )
+            if pago_a_registrar:
+                log.info(
+                    "[DRY-RUN] también se registraría %s por S/ %.2f",
+                    nota_pago,
+                    pago_a_registrar,
+                )
             return
 
         try:
@@ -390,14 +366,17 @@ class WatcherService:
         self.state.mark_processed(file_hash, path.name, venta_id)
         self.state.clear_retry(file_hash)
 
-        if venta.estado == "Pagó":
+        if pago_a_registrar:
             try:
-                self.api.create_pago(cliente["id"], venta.pago, f"Pago venta #{venta_id}")
-                log.info("Pago total registrado para la venta #%s", venta_id)
+                self.api.create_pago(
+                    cliente["id"], pago_a_registrar, f"{nota_pago} venta #{venta_id}"
+                )
+                log.info("%s registrado para la venta #%s", nota_pago, venta_id)
             except ApiError as exc:
                 log.warning(
-                    "La venta #%s quedó registrada pero el pago falló (%s). Se reintentará.",
+                    "La venta #%s quedó registrada pero %s falló (%s). Se reintentará.",
                     venta_id,
+                    nota_pago,
                     exc,
                 )
                 self._schedule_retry(
@@ -406,8 +385,8 @@ class WatcherService:
                     "pago",
                     {
                         "cliente_id": cliente["id"],
-                        "pago": venta.pago,
-                        "nota": f"Pago venta #{venta_id}",
+                        "pago": pago_a_registrar,
+                        "nota": f"{nota_pago} venta #{venta_id}",
                         "venta_id": venta_id,
                     },
                     exc,
@@ -714,6 +693,16 @@ def setup_logging(cfg: Config) -> None:
         root.addHandler(console)
 
 
+def _write_heartbeat(cfg: Config) -> None:
+    payload = {
+        "pid": os.getpid(),
+        "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    temporary = cfg.heartbeat_path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(payload), encoding="utf-8")
+    temporary.replace(cfg.heartbeat_path)
+
+
 def _emit(text: str, stream=None) -> None:
     """Escribe en consola; en el exe (windowed) muestra un diálogo."""
     if not getattr(sys, "frozen", False):
@@ -783,7 +772,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         gui = None
-        if cfg.gui_enabled and not args.no_gui and not args.dry_run:
+        if cfg.gui_enabled and not args.no_gui:
             from resolver_gui import ResolverGUI
 
             gui = ResolverGUI(cfg)
@@ -809,14 +798,32 @@ def main(argv: list[str] | None = None) -> int:
         log.info("Vigilando %s (Ctrl+C para salir)", cfg.entrada)
 
         try:
+            _write_heartbeat(cfg)
+            last_heartbeat = time.monotonic()
             while True:
+                if not observer.is_alive():
+                    raise RuntimeError("el observer de watchdog terminó inesperadamente")
+                if not all(thread.is_alive() for thread in service._threads):
+                    raise RuntimeError("un worker interno terminó inesperadamente")
+                if gui is not None and not gui._thread.is_alive():
+                    raise RuntimeError("el hilo Tkinter terminó inesperadamente")
+                if time.monotonic() - last_heartbeat >= cfg.heartbeat_interval_seconds:
+                    _write_heartbeat(cfg)
+                    last_heartbeat = time.monotonic()
                 time.sleep(1)
         except KeyboardInterrupt:
             log.info("Detenido por el usuario")
+        except Exception:
+            log.exception("El watcher dejó de funcionar correctamente")
+            return 4
         finally:
             service.stop()
             observer.stop()
             observer.join(timeout=5)
+            try:
+                cfg.heartbeat_path.unlink(missing_ok=True)
+            except OSError:
+                log.warning("No se pudo limpiar el heartbeat %s", cfg.heartbeat_path)
         return 0
     finally:
         lock.release()

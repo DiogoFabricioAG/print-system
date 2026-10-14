@@ -13,8 +13,6 @@ if getattr(sys, "frozen", False):
 else:
     BASE_DIR = Path(__file__).resolve().parent
 
-ESTADOS_VALIDOS = ("Debe", "Crédito", "Pagó")
-
 DEFAULT_MAQUINA_ALIASES = {
     "dtf": "DTF",
     "impresion": "impresion",
@@ -24,6 +22,8 @@ DEFAULT_MAQUINA_ALIASES = {
     "vinil": "vinil",
     "uv": "UV",
 }
+
+ESTADOS_VALIDOS = ("Debe", "Pagó", "Crédito")
 
 
 class ConfigError(Exception):
@@ -82,13 +82,13 @@ class Config:
     api_url: str
     api_key: str
     watch_folder: Path | None = None
-    separator: str = "__"
-    estado_default: str = "Debe"
+    separator: str = " - "
     gui_enabled: bool = True
     gui_timeout: float = 600.0
     max_retries: int = 5
     retry_base_seconds: float = 5.0
     retry_max_seconds: float = 300.0
+    heartbeat_interval_seconds: int = 30
     stability_checks: int = 2
     stability_interval: float = 0.5
     stability_timeout: float = 30.0
@@ -125,6 +125,10 @@ class Config:
     def lock_path(self) -> Path:
         return self.watch_root / "watcher.lock"
 
+    @property
+    def heartbeat_path(self) -> Path:
+        return self.logs / "watcher.heartbeat"
+
     def ensure_folders(self) -> None:
         for folder in (
             self.watch_root,
@@ -147,12 +151,6 @@ def load_config(require_api_key: bool = True) -> Config:
             "generada con `npm run api-key` (en functions/)."
         )
 
-    estado_default = (os.environ.get("ESTADO_DEFAULT") or "Debe").strip() or "Debe"
-    if estado_default not in ESTADOS_VALIDOS:
-        raise ConfigError(
-            f"ESTADO_DEFAULT inválido: {estado_default!r} (usar: {', '.join(ESTADOS_VALIDOS)})"
-        )
-
     aliases = dict(DEFAULT_MAQUINA_ALIASES)
     extra = (os.environ.get("MAQUINA_ALIASES") or "").strip()
     if extra:
@@ -163,9 +161,13 @@ def load_config(require_api_key: bool = True) -> Config:
 
     watch_folder_raw = (os.environ.get("WATCH_FOLDER") or "").strip()
 
-    separator = (os.environ.get("SEPARATOR") or "__").strip() or "__"
+    separator = os.environ.get("SEPARATOR") or " - "
     if any(char in separator for char in '<>:"/\\|?*'):
         raise ConfigError(f"SEPARATOR contiene caracteres inválidos para nombres de archivo: {separator!r}")
+
+    heartbeat_interval = _env_int("HEARTBEAT_INTERVAL_SECONDS", 30)
+    if heartbeat_interval < 5:
+        raise ConfigError("HEARTBEAT_INTERVAL_SECONDS debe ser 5 o más")
 
     return Config(
         watch_root=Path(os.environ.get("WATCH_ROOT", r"C:\PrintSystem\ventas")),
@@ -175,12 +177,12 @@ def load_config(require_api_key: bool = True) -> Config:
         api_key=api_key,
         watch_folder=Path(watch_folder_raw) if watch_folder_raw else None,
         separator=separator,
-        estado_default=estado_default,
         gui_enabled=_env_bool("GUI_ENABLED", True),
         gui_timeout=_env_float("GUI_TIMEOUT", 600.0),
         max_retries=_env_int("MAX_RETRIES", 5),
         retry_base_seconds=_env_float("RETRY_BASE_SECONDS", 5.0),
         retry_max_seconds=_env_float("RETRY_MAX_SECONDS", 300.0),
+        heartbeat_interval_seconds=heartbeat_interval,
         stability_checks=_env_int("STABILITY_CHECKS", 2),
         stability_interval=_env_float("STABILITY_INTERVAL", 0.5),
         stability_timeout=_env_float("STABILITY_TIMEOUT", 30.0),

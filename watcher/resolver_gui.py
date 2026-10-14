@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 import queue
 import threading
-from datetime import datetime
 
 from config import ESTADOS_VALIDOS, Config
 from parser import normalize_text, parse_metros
@@ -38,7 +37,11 @@ C = {
     "accent_text": "#0369A1",
     "success": "#059669",
     "success_dark": "#047857",
+    "success_soft": "#ECFDF5",
     "success_text": "#047857",
+    "warning_soft": "#FFFBEB",
+    "warning_border": "#FDE68A",
+    "warning_text": "#B45309",
     "danger": "#E11D48",
     "danger_soft": "#FFF1F2",
     "chip_error_bg": "#7F1D1D",
@@ -200,8 +203,18 @@ class ResolverGUI:
             highlightbackground=border,
             highlightcolor=border,
         )
-        button.bind("<Enter>", lambda _e: button.configure(bg=hover))
-        button.bind("<Leave>", lambda _e: button.configure(bg=bg))
+        button.bind(
+            "<Enter>",
+            lambda _e: button.configure(bg=hover)
+            if str(button.cget("state")) != "disabled"
+            else None,
+        )
+        button.bind(
+            "<Leave>",
+            lambda _e: button.configure(bg=bg)
+            if str(button.cget("state")) != "disabled"
+            else None,
+        )
         return button
 
     def _entry(self, parent, **entry_kwargs):
@@ -277,15 +290,16 @@ class ResolverGUI:
 
     def _show_dialog(self, payload: dict, response_queue: queue.Queue) -> None:
         tk = self._tk
-        is_form = payload["kind"] == "form"
+        is_form = payload["kind"] in ("form", "review")
+        has_parse_error = bool(payload.get("error"))
 
         top = tk.Toplevel(self._root)
         top.withdraw()
-        top.title(
-            "Print System · Nombre fuera de convención"
-            if is_form
-            else "Print System · Cliente no encontrado"
-        )
+        if is_form:
+            window_title = "Confirmar venta" if not has_parse_error else "Completar venta"
+        else:
+            window_title = "Cliente no encontrado"
+        top.title(f"Print System · {window_title}")
         top.configure(bg=C["bg"])
         top.resizable(False, False)
         top.attributes("-topmost", True)
@@ -303,7 +317,7 @@ class ResolverGUI:
         top.protocol("WM_DELETE_WINDOW", lambda: finish({"accion": "pendiente"}))
 
         # ── header ──
-        if is_form:
+        if is_form and has_parse_error:
             header = self._header(
                 top,
                 "Nombre fuera de convención",
@@ -311,6 +325,13 @@ class ResolverGUI:
                 chip="Formato inválido",
                 chip_bg=C["chip_error_bg"],
                 chip_fg=C["chip_error_text"],
+            )
+        elif is_form:
+            header = self._header(
+                top,
+                "Confirmar venta",
+                payload.get("filename", ""),
+                chip="Revisa los datos antes de guardar",
             )
         else:
             header = self._header(
@@ -363,13 +384,24 @@ class ResolverGUI:
         top.bind_all("<MouseWheel>", _on_wheel)
         top.bind("<Destroy>", _on_destroy)
 
-        if is_form:
+        if is_form and has_parse_error:
             tk.Label(
                 body,
                 text=f"No se pudo parsear el nombre: {payload.get('error', '')}",
                 font=FONT_SMALL,
                 bg=C["bg"],
                 fg=C["danger"],
+                anchor="w",
+                wraplength=650,
+                justify="left",
+            ).pack(fill="x", pady=(0, 10))
+        elif is_form:
+            tk.Label(
+                body,
+                text="Confirma o edita los datos. El nombre original del archivo no se modificará.",
+                font=FONT_SMALL,
+                bg=C["bg"],
+                fg=C["muted"],
                 anchor="w",
                 wraplength=650,
                 justify="left",
@@ -438,10 +470,32 @@ class ResolverGUI:
         )
         count_label.pack(fill="x", pady=(6, 0))
 
+        client_status_box = tk.Frame(
+            body,
+            bg=C["warning_soft"],
+            highlightthickness=1,
+            highlightbackground=C["warning_border"],
+        )
+        client_status_box.pack(fill="x", pady=(6, 0))
+        client_status_label = tk.Label(
+            client_status_box,
+            text="",
+            font=FONT_BODY_BOLD,
+            bg=C["warning_soft"],
+            fg=C["warning_text"],
+            anchor="w",
+            justify="left",
+            wraplength=640,
+            padx=10,
+            pady=8,
+        )
+        client_status_label.pack(fill="x")
+        primary_button_holder: dict = {"widget": None}
+
         # ── formulario (solo kind=form) ──
         form_widgets: dict = {}
         estado_var = None
-
+        adelanto_entry = None
         if is_form:
             fields_card = tk.Frame(
                 body,
@@ -457,7 +511,7 @@ class ResolverGUI:
             form_widgets["diseno"] = self._field(fields_card, 0, "Diseño", required=True)
             form_widgets["cantidad"] = self._field(fields_card, 1, "Cantidad (ej: 10uni)")
             form_widgets["metros"] = self._field(fields_card, 2, "Metros (ej: 1.5mts / 150cm)")
-            form_widgets["maquina"] = self._field(fields_card, 3, "Máquina (ej: DTF)")
+            form_widgets["maquina"] = self._field(fields_card, 3, "Máquina (ej: DTF)", required=True)
             form_widgets["monto"] = self._field(fields_card, 4, "Monto S/", required=True)
 
             tk.Label(
@@ -468,22 +522,53 @@ class ResolverGUI:
                 fg=C["muted"],
                 anchor="e",
             ).grid(row=5, column=0, sticky="e", padx=(0, 10), pady=4)
-            estado_var = tk.StringVar(value=self.cfg.estado_default)
-            combo = self._ttk.Combobox(
+            estado_var = tk.StringVar(value=(payload.get("prefill") or {}).get("estado", "Debe"))
+            estado_combo = self._ttk.Combobox(
                 fields_card,
                 textvariable=estado_var,
-                values=list(ESTADOS_VALIDOS),
+                values=ESTADOS_VALIDOS,
                 state="readonly",
                 font=FONT_BODY,
             )
-            combo.grid(row=5, column=1, sticky="we", pady=4)
+            estado_combo.grid(row=5, column=1, sticky="we", pady=4)
 
-            form_widgets["fecha"] = self._field(fields_card, 6, "Fecha (YYYY-MM-DD)")
+            adelanto_label = tk.Label(
+                fields_card,
+                text="Adelanto S/ *",
+                font=FONT_SMALL,
+                bg=C["card"],
+                fg=C["muted"],
+                anchor="e",
+            )
+            adelanto_label.grid(row=6, column=0, sticky="e", padx=(0, 10), pady=4)
+            adelanto_box, adelanto_entry = self._entry(fields_card)
+            adelanto_box.grid(row=6, column=1, sticky="we", pady=4)
+            adelanto_box.grid_remove()
+            adelanto_label.grid_remove()
 
-        new_client_label = tk.Label(
-            body, text="", font=FONT_BODY_BOLD, bg=C["bg"], fg=C["success_text"], anchor="w"
-        )
-        new_client_label.pack(fill="x", pady=(8, 0))
+            def update_adelanto(_event=None) -> None:
+                if estado_var.get() == "Crédito":
+                    adelanto_label.grid()
+                    adelanto_box.grid()
+                else:
+                    adelanto_label.grid_remove()
+                    adelanto_box.grid_remove()
+
+            estado_combo.bind("<<ComboboxSelected>>", update_adelanto)
+
+            prefill = payload.get("prefill") or {}
+            for key in ("diseno", "cantidad", "metro_total", "maquina", "pago"):
+                value = prefill.get(key)
+                if value is not None:
+                    text = f"{value:g}" if isinstance(value, float) else str(value)
+                    target_key = {
+                        "metro_total": "metros",
+                        "pago": "monto",
+                    }.get(key, key)
+                    form_widgets[target_key].insert(0, text)
+            if prefill.get("adelanto") is not None:
+                adelanto_entry.insert(0, str(prefill["adelanto"]))
+            update_adelanto()
 
         # ── datos y filtrado ──
         clients = payload.get("clientes") or []
@@ -512,7 +597,15 @@ class ResolverGUI:
                 row_clients.append(cliente)
 
             count_label.config(text=f"{len(row_clients)} cliente(s)")
-            if row_clients:
+            if is_form:
+                selected_id = payload.get("selected_client_id")
+                if selected_id is not None:
+                    for index, cliente in enumerate(row_clients):
+                        if cliente.get("id") == selected_id:
+                            listbox.selection_set(index)
+                            listbox.see(index)
+                            break
+            elif row_clients:
                 listbox.selection_set(0)
 
         def selected_client() -> dict | None:
@@ -524,14 +617,64 @@ class ResolverGUI:
                 return None
             return row_clients[index]
 
+        def refresh_primary_state() -> None:
+            button = primary_button_holder["widget"]
+            if button is None or not is_form:
+                return
+            enabled = selected_client() is not None or new_client_holder["value"] is not None
+            if enabled:
+                button.configure(state="normal")
+            else:
+                button.configure(state="disabled")
+
+        def refresh_client_status() -> None:
+            selected = selected_client()
+            nuevo = new_client_holder["value"]
+            if nuevo:
+                client_status_box.configure(
+                    bg=C["success_soft"], highlightbackground="#A7F3D0"
+                )
+                client_status_label.configure(
+                    bg=C["success_soft"],
+                    fg=C["success_text"],
+                    text=f"✓ Se creará el cliente: {nuevo['nombre']}",
+                )
+            elif selected:
+                client_status_box.configure(
+                    bg=C["success_soft"], highlightbackground="#A7F3D0"
+                )
+                client_status_label.configure(
+                    bg=C["success_soft"],
+                    fg=C["success_text"],
+                    text=f"✓ Cliente seleccionado: {selected.get('nombre', '')}",
+                )
+            else:
+                client_status_box.configure(
+                    bg=C["warning_soft"], highlightbackground=C["warning_border"]
+                )
+                message = (
+                    "⚠ Falta seleccionar un cliente. Elige uno de la lista o pulsa «Crear nuevo cliente…»."
+                    if clients
+                    else "⚠ No hay clientes para seleccionar. Pulsa «Crear nuevo cliente…» para continuar."
+                )
+                client_status_label.configure(
+                    bg=C["warning_soft"], fg=C["warning_text"], text=message
+                )
+            refresh_primary_state()
+
         def clear_new_client(_event=None) -> None:
             if new_client_holder["value"]:
                 new_client_holder["value"] = None
-                new_client_label.config(text="")
+            refresh_client_status()
 
         listbox.bind("<<ListboxSelect>>", clear_new_client)
         fill_list()
-        search_entry.bind("<KeyRelease>", lambda _event: fill_list(search_entry.get()))
+        refresh_client_status()
+        def search_clients(_event=None) -> None:
+            fill_list(search_entry.get())
+            refresh_client_status()
+
+        search_entry.bind("<KeyRelease>", search_clients)
 
         # ── diálogo "nuevo cliente" ──
         def ask_new_client() -> dict | None:
@@ -618,9 +761,7 @@ class ResolverGUI:
                 finish({"accion": "crear", "datos": datos})
             else:
                 new_client_holder["value"] = datos
-                new_client_label.config(
-                    text=f"Se creará el cliente: {datos['nombre']} (al registrar la venta)"
-                )
+                refresh_client_status()
 
         # ── acción principal ──
         def read_optional_float(entry) -> tuple[float | None, bool]:
@@ -663,6 +804,13 @@ class ResolverGUI:
                 )
                 return
 
+            maquina = form_widgets["maquina"].get().strip()
+            if not maquina:
+                self._messagebox.showwarning(
+                    "Faltan datos", "La máquina es obligatoria.", parent=top
+                )
+                return
+
             monto_raw = form_widgets["monto"].get().strip()
             try:
                 pago = float(monto_raw.replace(",", "."))
@@ -683,14 +831,25 @@ class ResolverGUI:
                 )
                 return
 
-            fecha = form_widgets["fecha"].get().strip() or None
-            if fecha:
+            estado = estado_var.get()
+            adelanto = None
+            if estado == "Crédito":
+                adelanto_raw = adelanto_entry.get().strip()
                 try:
-                    datetime.strptime(fecha, "%Y-%m-%d")
+                    adelanto = float(adelanto_raw.replace(",", "."))
                 except ValueError:
+                    adelanto = 0.0
+                if adelanto <= 0:
                     self._messagebox.showwarning(
-                        "Datos inválidos",
-                        "La fecha debe tener formato YYYY-MM-DD.",
+                        "Falta el adelanto",
+                        "Para una venta a Crédito, ingresa el adelanto recibido.",
+                        parent=top,
+                    )
+                    return
+                if adelanto > pago:
+                    self._messagebox.showwarning(
+                        "Adelanto inválido",
+                        "El adelanto no puede ser mayor que el costo total.",
                         parent=top,
                     )
                     return
@@ -699,10 +858,10 @@ class ResolverGUI:
                 "diseno": diseno,
                 "cantidad": form_widgets["cantidad"].get().strip() or None,
                 "metro_total": metro_total,
-                "maquina": form_widgets["maquina"].get().strip() or None,
+                "maquina": maquina,
                 "pago": pago,
-                "estado": estado_var.get(),
-                "fecha": fecha,
+                "estado": estado,
+                "adelanto": adelanto,
             }
             finish(
                 {
@@ -716,17 +875,26 @@ class ResolverGUI:
         # ── botones del pie ──
         tk.Label(
             footer,
-            text="Enter: confirmar  ·  Esc: va a pendientes",
+            text="El archivo conserva su nombre  ·  Enter confirma  ·  Esc: pendientes",
             font=FONT_SMALL,
             bg=C["bg"],
             fg=C["section"],
         ).pack(side="left")
 
-        primary_text = "Registrar venta" if is_form else "Usar seleccionado"
-        primary_kind = "success" if is_form else "primary"
-        self._flat_button(footer, primary_text, primary_action, kind=primary_kind).pack(
-            side="right"
+        primary_text = (
+            "Confirmar dry-run"
+            if is_form and payload.get("dry_run")
+            else "Confirmar y registrar"
+            if is_form
+            else "Usar seleccionado"
         )
+        primary_kind = "success" if is_form else "primary"
+        primary_button = self._flat_button(
+            footer, primary_text, primary_action, kind=primary_kind
+        )
+        primary_button.pack(side="right")
+        primary_button_holder["widget"] = primary_button
+        refresh_primary_state()
         self._flat_button(
             footer, "Crear nuevo cliente…", choose_new_client, kind="ghost", padx=14
         ).pack(side="right", padx=(0, 8))

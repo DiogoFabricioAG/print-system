@@ -6,36 +6,37 @@ Vigila una carpeta local y **registra una venta en Print System cada vez que apa
 entrada/nuevo.png
   → watchdog detecta el archivo y espera a que esté estable
   → valida que el nombre termine en .png + parsea el nombre
-  → resuelve el cliente (si no existe, popup Tkinter: similar / crear / ignorar)
-  → POST /api/ventas [+ POST /api/pagos si estado = Pagó]
+  → muestra siempre Tkinter para revisar/editar la venta y confirmar
+  → POST /api/ventas; si se confirma Pagó/Crédito, también registra el pago/adelanto
   → clave de idempotencia en SQLite + mueve el archivo a procesados/
 ```
 
 ## Convención de nombre
 
 ```
-[YYYY-MM-DD__]CLIENTE__DISEÑO__CANTIDAD__METROS__MAQUINA__MONTO[__ESTADO].png
+DISEÑO - CLIENTE - CANTIDAD - METRAJE - PAGO - MAQUINA.png
 ```
 
 | Campo | Ejemplos | Notas |
 |---|---|---|
-| FECHA (opcional) | `2026-10-08` | Fecha de la venta; por defecto hoy (America/Lima, vía API) |
-| CLIENTE | `SR PABLO`, `JHONATAN` | Match sin tildes/mayúsculas contra la API |
-| DISEÑO | `logo circular` | |
-| CANTIDAD | `10uni`, `2polos`, `10` | Se guarda como texto |
-| METROS | `1.5mts`, `150cm`, `2m` | `cm` se convierte a metros |
-| MAQUINA | `DTF`, `impresion`, `plotter` | Alias configurables (`MAQUINA_ALIASES`) |
-| MONTO | `S50`, `50`, `50.50` | Sin `/` (inválido en Windows) |
-| ESTADO (opcional) | `Debe`, `Crédito`, `Pagó` | Por defecto `ESTADO_DEFAULT` (Debe). `Pagó` crea también el registro en pagos |
+| DISEÑO | `polo navidad` | Va primero; no debe contener el delimitador ` - ` |
+| CLIENTE | `karen - deyna`, `JHONATAN` | Va segundo; match sin tildes/mayúsculas contra la API |
+| CANTIDAD | `2polos`, `10uni`, `4` | Se guarda como texto |
+| METRAJE | `150cm`, `1.5mts`, `2m` | `cm` se convierte a metros |
+| PAGO | `80 soles`, `S80`, `80.50` | Número mayor que cero |
+| MAQUINA | `DTF`, `impresion`, `plotter` | Obligatoria; se guarda en la venta |
 
-Ejemplos válidos:
+El diálogo de confirmación abre con estado `Debe` seleccionado, pero puedes cambiarlo a `Pagó` o `Crédito`. `Pagó` registra el pago total; `Crédito` pide el adelanto y registra ese abono. La fecha siempre es hoy (America/Lima), asignada por la API.
+
+Ejemplo válido:
 
 ```
-SR PABLO__logo circular__10uni__1.5mts__DTF__S50.png
-2026-10-08__JHONATAN__polo navidad__2polos__150cm__impresion__S120__Pagó.png
+polo navidad - karen - deyna - 2polos - 150cm - 80 soles - DTF.png
 ```
 
-> El watcher comprueba la extensión `.png`, pero no inspecciona ni convierte el contenido: un TIFF que termine en `.png` también pasa. El separador por defecto es `__` (doble guion bajo) y se puede cambiar con `SEPARATOR` en `.env` (ej. `SEPARATOR=--`, útil para compartir el formato sin que WhatsApp lo ponga en cursiva). Un nombre fuera de convención abre un **formulario Tkinter** para completar la venta a mano (o va a `pendientes/` si la GUI está desactivada).
+Cada PNG abre un diálogo Tkinter **antes de guardar**. Los campos se precargan del nombre y puedes confirmarlos o editarlos. Los cambios afectan solo a la venta; el nombre del archivo se conserva. Si el nombre no se puede parsear, el mismo diálogo permite completar los datos manualmente. Si se cierra o no hay sesión interactiva, el archivo va a `pendientes/`.
+
+> El watcher comprueba la extensión `.png`, pero no inspecciona ni convierte el contenido: un TIFF/BMP que termine en `.png` también pasa. El separador es ` - `. Diseño no debe contener esa secuencia; cliente sí puede contenerla.
 
 ## Instalación
 
@@ -55,6 +56,7 @@ WATCH_ROOT=C:\PrintSystem\ventas
 # WATCH_FOLDER=D:\Disenos\cola   # opcional: carpeta monitoreada si es distinta de <WATCH_ROOT>\entrada
 API_URL=https://functions.diogofabricio17.workers.dev/api
 API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
+SEPARATOR=" - "      # separador del nombre de archivo
 ```
 
 ## Mover a otra máquina
@@ -73,14 +75,14 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 3. Crea `.env` con tu `API_KEY`, el `WATCH_ROOT` y (si aplica) el `WATCH_FOLDER` de esa máquina.
 4. Prueba antes de dejarlo fijo:
    ```powershell
-   .\.venv\Scripts\python watcher.py --validate "CLIENTE__diseno__1uni__1mts__DTF__S10.png"
+   .\.venv\Scripts\python watcher.py --validate "diseno - CLIENTE - 1uni - 1mts - 10 soles - DTF.png"
    .\.venv\Scripts\python watcher.py --dry-run --once
    ```
 5. Instala el arranque automático:
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\install-task.ps1
    ```
-6. Opcional: pon `GUI_ENABLED=false` si esa máquina no tendrá sesión interactiva (los casos dudosos irán a `pendientes/`).
+6. Opcional: pon `GUI_ENABLED=false` si esa máquina no tendrá sesión interactiva (los PNG irán a `pendientes/` porque requieren confirmación).
 
 ### Opción B — sin Python en la máquina destino (exe portable)
 
@@ -90,7 +92,7 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
    powershell -ExecutionPolicy Bypass -File .\build-exe.ps1
    ```
    Genera `dist\PrintSystemWatcher.exe` (no requiere Python en el destino).
-2. Copia a la máquina destino, **en la misma carpeta**: `PrintSystemWatcher.exe` + tu `.env` (ajusta `WATCH_ROOT`/`WATCH_FOLDER` de esa máquina).
+2. Copia a la máquina destino, **en la misma carpeta**: `PrintSystemWatcher.exe`, `.env`, `install-task.ps1`, `uninstall-task.ps1`, `watcher-heartbeat.ps1`, `install-heartbeat.ps1`, `uninstall-heartbeat.ps1` y `status-task.ps1`. Ajusta `WATCH_ROOT`/`WATCH_FOLDER` en `.env`.
 3. Registra la tarea apuntando al ejecutable:
    ```powershell
    powershell -ExecutionPolicy Bypass -File .\install-task.ps1 -ExePath "C:\ruta\PrintSystemWatcher.exe"
@@ -103,7 +105,7 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 ## Uso
 
 ```powershell
-.\.venv\Scripts\python watcher.py --validate "SR PABLO__logo__10uni__1.5mts__DTF__S50.png"
+.\.venv\Scripts\python watcher.py --validate "logo - SR PABLO - 10uni - 1.5mts - 50 soles - DTF.png"
 .\.venv\Scripts\python watcher.py --dry-run --once   # prueba sin enviar nada a la API
 .\.venv\Scripts\python watcher.py                    # vigila en primer plano
 .\.venv\Scripts\python watcher.py --stats            # procesados / reintentos / pendientes
@@ -112,10 +114,10 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 | Flag | Descripción |
 |---|---|
 | `--once` | Procesa los PNG existentes en `entrada/` y sale |
-| `--dry-run` | Parsea y resuelve, pero **no** envía nada a la API ni mueve archivos |
+| `--dry-run` | Abre la revisión y muestra en el log el payload; **no** envía nada a la API ni mueve archivos |
 | `--validate NOMBRE.png` | Valida un nombre contra la convención |
 | `--stats` | Estadísticas del estado local (SQLite) |
-| `--no-gui` | Desactiva los diálogos Tkinter (todo lo dudoso va a `pendientes/`) |
+| `--no-gui` | Desactiva Tkinter; todos los PNG quedan en `pendientes/` para evitar guardar sin confirmación |
 
 ## Tarea programada (Windows)
 
@@ -123,13 +125,27 @@ API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 powershell -ExecutionPolicy Bypass -File .\install-task.ps1
 # Si ya existe y quieres reemplazarla:
 powershell -ExecutionPolicy Bypass -File .\install-task.ps1 -Force
+# Estado de tarea, log y conexión API:
+powershell -ExecutionPolicy Bypass -File .\status-task.ps1
 # Desinstalar:
 powershell -ExecutionPolicy Bypass -File .\uninstall-task.ps1
 ```
 
+### Heartbeat / auto-reinicio
+
+El watcher actualiza `<WATCH_ROOT>\logs\watcher.heartbeat` cada 30 segundos. Instala el supervisor para revisar el pulso cada 5 minutos y reiniciar la tarea si se detiene o queda sin actualizar por 3 minutos:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-heartbeat.ps1 -IntervalMinutes 5 -StaleMinutes 3
+Start-ScheduledTask -TaskName PrintSystemWatcherHeartbeat
+powershell -ExecutionPolicy Bypass -File .\status-task.ps1
+```
+
+Puedes cambiar `-IntervalMinutes` y `-StaleMinutes` al instalarlo. El supervisor corre al iniciar sesión; no necesita Python. Para quitarlo: `powershell -ExecutionPolicy Bypass -File .\uninstall-heartbeat.ps1`.
+
 - Se registra **al iniciar sesión** del usuario porque los popups Tkinter necesitan una sesión interactiva.
 - Corre con `pythonw.exe` (sin consola); el log queda en `<WATCH_ROOT>\logs\watcher.log`.
-- Si la tarea no muestra popups (p. ej. sin sesión), los casos dudosos van a `pendientes/` y el watcher sigue funcionando.
+- Si la tarea no muestra popups (p. ej. sin sesión), los PNG van a `pendientes/`; no se registran sin confirmación.
 - Requiere el lock de instancia única: si ya hay un watcher corriendo, el segundo proceso sale solo.
 
 ## Carpetas y estados
@@ -161,4 +177,4 @@ powershell -ExecutionPolicy Bypass -File .\uninstall-task.ps1
 | Todo va a `pendientes/` con "API key inválida (401)" | `API_KEY` mal copiada o rotada en Cloudflare |
 | Los popups no aparecen | La tarea corre como SYSTEM o sin sesión; usa "Al iniciar sesión" o revisa `logs/watcher.log` |
 | Los archivos no se mueven | Archivo abierto/bloqueado por otro programa (se reintenta el movimiento en el siguiente pase) |
-| `--validate` dice INVÁLIDO | Revisa separador `__`, orden de campos y montos sin `/` |
+| `--validate` dice INVÁLIDO | Revisa el orden DISEÑO - CLIENTE - CANTIDAD - METRAJE - PAGO - MAQUINA |
