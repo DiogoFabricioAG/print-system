@@ -17,7 +17,7 @@ import queue
 import threading
 
 from config import ESTADOS_VALIDOS, Config
-from parser import normalize_text, parse_metros
+from parser import FilenameParseError, ParsedVenta, build_canonical_filename, normalize_text, parse_metros
 
 log = logging.getLogger("watcher.gui")
 
@@ -78,16 +78,15 @@ class ResolverGUI:
             return None
 
         response_queue: queue.Queue = queue.Queue(1)
-        payload["expired"] = False
         self.requests.put((payload, response_queue))
-        try:
-            return response_queue.get(timeout=self.cfg.gui_timeout)
-        except queue.Empty:
-            payload["expired"] = True
-            log.warning(
-                "El diálogo para %s expiró sin respuesta", payload.get("filename")
-            )
-            return None
+        # Sin timeout: el operador puede revisar y decidir cuando esté listo.
+        # Solo se cancela si el hilo Tkinter termina inesperadamente.
+        while self._thread.is_alive():
+            try:
+                return response_queue.get(timeout=1)
+            except queue.Empty:
+                continue
+        return None
 
     # ── hilo GUI ────────────────────────────────────────────────────────────
 
@@ -155,8 +154,6 @@ class ResolverGUI:
         try:
             while True:
                 payload, response_queue = self.requests.get_nowait()
-                if payload.get("expired"):
-                    continue
                 try:
                     self._show_dialog(payload, response_queue)
                 except Exception:  # noqa: BLE001
@@ -286,6 +283,81 @@ class ResolverGUI:
         y = max((screen_h - height) // 2 + offset_y, 0)
         window.geometry(f"{width}x{height}+{x}+{y}")
 
+    def _add_image_preview(self, parent, image_path: str | None) -> None:
+        if not image_path:
+            return
+
+        frame = self._tk.Frame(
+            parent,
+            bg=C["card"],
+            highlightthickness=1,
+            highlightbackground=C["border"],
+            padx=10,
+            pady=8,
+        )
+        frame.pack(fill="x", pady=(0, 12))
+
+        self._tk.Label(
+            frame,
+            text="VISTA PREVIA DEL ARCHIVO",
+            font=FONT_SECTION,
+            bg=C["card"],
+            fg=C["section"],
+            anchor="w",
+        ).pack(fill="x", pady=(0, 6))
+
+        content = self._tk.Frame(frame, bg=C["card"])
+        content.pack(fill="x")
+
+        try:
+            from PIL import Image, ImageOps, ImageTk
+
+            with Image.open(image_path) as source:
+                image_format = source.format or Path(image_path).suffix.lstrip(".").upper()
+                original_size = source.size
+                image = ImageOps.exif_transpose(source).copy()
+                image.thumbnail((300, 150), Image.Resampling.LANCZOS)
+                if image.mode not in ("RGB", "RGBA"):
+                    image = image.convert("RGBA")
+                photo = ImageTk.PhotoImage(image, master=self._root)
+
+            image_area = self._tk.Frame(content, bg=C["bg"], width=320, height=160)
+            image_area.pack(side="left", padx=(0, 12))
+            image_area.pack_propagate(False)
+            image_label = self._tk.Label(image_area, image=photo, bg=C["bg"])
+            image_label.image = photo  # mantener viva la referencia Tk
+            image_label.pack(expand=True)
+
+            info = self._tk.Frame(content, bg=C["card"])
+            info.pack(side="left", fill="both", expand=True)
+            self._tk.Label(
+                info,
+                text=f"Formato detectado: {image_format}",
+                font=FONT_BODY_BOLD,
+                bg=C["card"],
+                fg=C["text"],
+                anchor="w",
+            ).pack(fill="x", pady=(12, 4))
+            self._tk.Label(
+                info,
+                text=f"{original_size[0]} × {original_size[1]} px",
+                font=FONT_SMALL,
+                bg=C["card"],
+                fg=C["muted"],
+                anchor="w",
+            ).pack(fill="x")
+        except Exception as exc:  # noqa: BLE001
+            self._tk.Label(
+                content,
+                text=f"No se pudo mostrar la vista previa ({exc}).\nLos datos de la venta se pueden revisar igualmente.",
+                font=FONT_SMALL,
+                bg=C["card"],
+                fg=C["muted"],
+                anchor="w",
+                justify="left",
+                wraplength=620,
+            ).pack(fill="x", pady=8)
+
     # ── diálogo principal ───────────────────────────────────────────────────
 
     def _show_dialog(self, payload: dict, response_queue: queue.Queue) -> None:
@@ -307,7 +379,7 @@ class ResolverGUI:
         state = {"done": False}
 
         def finish(value: dict) -> None:
-            if state["done"] or payload.get("expired"):
+            if state["done"]:
                 top.destroy()
                 return
             state["done"] = True
@@ -398,7 +470,7 @@ class ResolverGUI:
         elif is_form:
             tk.Label(
                 body,
-                text="Confirma o edita los datos. El nombre original del archivo no se modificará.",
+                text="Confirma o edita los datos. Al guardar, el archivo se renombrará con la convención estándar.",
                 font=FONT_SMALL,
                 bg=C["bg"],
                 fg=C["muted"],
@@ -406,6 +478,8 @@ class ResolverGUI:
                 wraplength=650,
                 justify="left",
             ).pack(fill="x", pady=(0, 10))
+
+        self._add_image_preview(body, payload.get("file_path"))
 
         tk.Label(
             body,
@@ -863,6 +937,30 @@ class ResolverGUI:
                 "estado": estado,
                 "adelanto": adelanto,
             }
+            client_name = (selected or nuevo).get("nombre", "")
+            try:
+                build_canonical_filename(
+                    ParsedVenta(
+                        cliente=client_name,
+                        diseno=venta["diseno"],
+                        cantidad=venta["cantidad"],
+                        metro_total=venta["metro_total"],
+                        maquina=venta["maquina"],
+                        pago=venta["pago"],
+                        estado=venta["estado"],
+                        fecha=None,
+                        adelanto=adelanto,
+                    ),
+                    self.cfg,
+                )
+            except FilenameParseError as exc:
+                self._messagebox.showwarning(
+                    "No se puede normalizar el nombre",
+                    f"Ajusta Diseño o Máquina para que no contengan el separador ' - '.\n\n{exc}",
+                    parent=top,
+                )
+                return
+
             finish(
                 {
                     "accion": "registrar",

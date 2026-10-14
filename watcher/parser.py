@@ -143,6 +143,37 @@ def parse_filename(filename: str, cfg: Config) -> ParsedVenta:
     )
 
 
+_WINDOWS_INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*]')
+
+
+def build_canonical_filename(venta: ParsedVenta, cfg: Config) -> str:
+    """Construye el nombre estándar con los valores confirmados por el usuario."""
+    if not venta.diseno or not venta.cliente or not venta.cantidad:
+        raise FilenameParseError("diseño, cliente y cantidad son obligatorios para renombrar")
+    if venta.metro_total is None or venta.pago <= 0 or not venta.maquina:
+        raise FilenameParseError("metraje, pago y máquina son obligatorios para renombrar")
+    if cfg.separator in venta.diseno or cfg.separator in venta.maquina:
+        raise FilenameParseError(
+            f"diseño y máquina no pueden contener el separador {cfg.separator!r}"
+        )
+
+    def safe_part(value: str) -> str:
+        return _WINDOWS_INVALID_FILENAME_CHARS.sub("_", value).strip().rstrip(" .")
+
+    fields = [
+        safe_part(venta.diseno),
+        safe_part(venta.cliente),
+        safe_part(venta.cantidad),
+        f"{venta.metro_total:g}m",
+        f"{venta.pago:g} soles",
+        safe_part(venta.maquina),
+    ]
+    if any(not value for value in fields):
+        raise FilenameParseError("uno de los campos queda vacío al formar el nombre estándar")
+
+    return cfg.separator.join(fields) + ".png"
+
+
 def validate_png_extension(path: Path) -> tuple[bool, str]:
     """Valida que sea un archivo con sufijo .png; no inspecciona el contenido."""
     if not path.is_file():

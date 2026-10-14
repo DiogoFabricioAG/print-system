@@ -36,6 +36,7 @@ from config import BASE_DIR, Config, ConfigError, load_config
 from parser import (
     FilenameParseError,
     ParsedVenta,
+    build_canonical_filename,
     build_nota,
     parse_filename,
     validate_png_extension,
@@ -248,6 +249,7 @@ class WatcherService:
             {
                 "kind": "review",
                 "filename": path.name,
+                "file_path": str(path),
                 "nombre": venta.cliente if venta is not None else None,
                 "error": parse_error,
                 "clientes": clientes,
@@ -258,7 +260,7 @@ class WatcherService:
             }
         )
         if resolution is None:
-            self._to_pending(path, file_hash, "el diálogo de confirmación expiró")
+            self._to_pending(path, file_hash, "la interfaz Tkinter terminó antes de confirmar")
             return
 
         accion = resolution.get("accion")
@@ -308,6 +310,12 @@ class WatcherService:
         self._register(path, file_hash, venta_confirmada, cliente)
 
     def _register(self, path: Path, file_hash: str, venta: ParsedVenta, cliente: dict) -> None:
+        try:
+            canonical_filename = build_canonical_filename(venta, self.cfg)
+        except FilenameParseError as exc:
+            self._to_pending(path, file_hash, f"no se puede formar el nombre estándar: {exc}")
+            return
+
         payload: dict = {
             "diseno": venta.diseno,
             "cliente_id": cliente["id"],
@@ -335,9 +343,10 @@ class WatcherService:
 
         if self.dry_run:
             log.info(
-                "[DRY-RUN] venta que se registraría → cliente=%s id=%s payload=%s",
+                "[DRY-RUN] venta que se registraría → cliente=%s id=%s archivo_final=%s payload=%s",
                 cliente.get("nombre"),
                 cliente.get("id"),
+                canonical_filename,
                 json.dumps(payload, ensure_ascii=False),
             )
             if pago_a_registrar:
@@ -355,7 +364,15 @@ class WatcherService:
                 path,
                 file_hash,
                 "venta",
-                {"venta": payload, "cliente_nombre": cliente.get("nombre")},
+                {
+                    "venta": payload,
+                    "archivo_canonico": canonical_filename,
+                    "pago_extra": (
+                        {"monto": pago_a_registrar, "tipo": nota_pago}
+                        if pago_a_registrar
+                        else None
+                    ),
+                },
                 exc,
             )
             return
@@ -366,35 +383,59 @@ class WatcherService:
         self.state.mark_processed(file_hash, path.name, venta_id)
         self.state.clear_retry(file_hash)
 
-        if pago_a_registrar:
-            try:
-                self.api.create_pago(
-                    cliente["id"], pago_a_registrar, f"{nota_pago} venta #{venta_id}"
-                )
-                log.info("%s registrado para la venta #%s", nota_pago, venta_id)
-            except ApiError as exc:
-                log.warning(
-                    "La venta #%s quedó registrada pero %s falló (%s). Se reintentará.",
-                    venta_id,
-                    nota_pago,
-                    exc,
-                )
-                self._schedule_retry(
-                    file_hash,
-                    path.name,
-                    "pago",
-                    {
-                        "cliente_id": cliente["id"],
-                        "pago": pago_a_registrar,
-                        "nota": f"{nota_pago} venta #{venta_id}",
-                        "venta_id": venta_id,
-                    },
-                    exc,
-                    1,
-                )
+        self._move_processed(path, file_hash, venta_id, canonical_filename)
 
-        self._move(path, self.cfg.procesados)
+        if pago_a_registrar:
+            self._register_followup_payment(
+                file_hash, path.name, cliente["id"], venta_id, pago_a_registrar, nota_pago
+            )
+
         self.counter["procesados"] += 1
+
+    def _register_followup_payment(
+        self,
+        file_hash: str,
+        archivo: str,
+        cliente_id: int,
+        venta_id: int | None,
+        monto: float,
+        tipo_pago: str,
+    ) -> None:
+        nota = f"{tipo_pago} venta #{venta_id}"
+        try:
+            self.api.create_pago(cliente_id, monto, nota)
+            log.info("%s registrado para la venta #%s", tipo_pago, venta_id)
+        except ApiError as exc:
+            log.warning(
+                "La venta #%s quedó registrada pero %s falló (%s). Se reintentará.",
+                venta_id,
+                tipo_pago,
+                exc,
+            )
+            self._schedule_retry(
+                file_hash,
+                archivo,
+                "pago",
+                {"cliente_id": cliente_id, "pago": monto, "nota": nota, "venta_id": venta_id},
+                exc,
+                1,
+            )
+
+    def _move_processed(
+        self,
+        path: Path,
+        original_key: str,
+        venta_id: int | None,
+        canonical_filename: str,
+    ) -> None:
+        moved = self._move(path, self.cfg.procesados, canonical_filename)
+        if moved is None:
+            return
+        # Registra también a chave del nombre normalizado para que volver a
+        # copiar el archivo procesado no duplique la venta.
+        canonical_key = self._safe_file_key(moved)
+        if canonical_key and canonical_key != original_key:
+            self.state.mark_processed(canonical_key, moved.name, venta_id)
 
     # ── reintentos ──────────────────────────────────────────────────────────
 
@@ -431,8 +472,12 @@ class WatcherService:
                 self._reschedule_or_give_up(row, exc, path)
             return
 
-        # tipo == "venta": si una respuesta anterior se perdió, evitar duplicar.
-        nota = payload.get("nota")
+        # tipo == "venta": payload interno contiene el cuerpo API, nombre final
+        # y eventual pago/adelanto posterior. Admite filas antiguas sin wrapper.
+        sale_payload = payload.get("venta", payload)
+        canonical_filename = payload.get("archivo_canonico", archivo)
+        pago_extra = payload.get("pago_extra")
+        nota = sale_payload.get("nota")
         if nota:
             try:
                 existing = self.api.find_venta_by_nota(nota)
@@ -443,18 +488,38 @@ class WatcherService:
                 self.state.mark_processed(file_hash, archivo, existing.get("id"))
                 self.state.clear_retry(file_hash)
                 if path.exists():
-                    self._move(path, self.cfg.procesados)
+                    self._move_processed(
+                        path, file_hash, existing.get("id"), canonical_filename
+                    )
+                if pago_extra:
+                    self._register_followup_payment(
+                        file_hash,
+                        archivo,
+                        sale_payload["cliente_id"],
+                        existing.get("id"),
+                        pago_extra["monto"],
+                        pago_extra["tipo"],
+                    )
                 return
 
         try:
-            created = self.api.create_venta(payload)
+            created = self.api.create_venta(sale_payload)
             venta_id = created.get("id") if isinstance(created, dict) else None
             log.info("Reintento de venta OK: #%s (%s)", venta_id, archivo)
             self.state.mark_processed(file_hash, archivo, venta_id)
             self.state.clear_retry(file_hash)
             self.counter["reintentos"] += 1
             if path.exists():
-                self._move(path, self.cfg.procesados)
+                self._move_processed(path, file_hash, venta_id, canonical_filename)
+            if pago_extra:
+                self._register_followup_payment(
+                    file_hash,
+                    archivo,
+                    sale_payload["cliente_id"],
+                    venta_id,
+                    pago_extra["monto"],
+                    pago_extra["tipo"],
+                )
         except ApiError as exc:
             self._reschedule_or_give_up(row, exc, path)
 
@@ -609,13 +674,14 @@ class WatcherService:
                 return candidate
         raise RuntimeError(f"No se pudo encontrar un nombre libre en {folder}")
 
-    def _move(self, path: Path, folder: Path) -> Path | None:
+    def _move(self, path: Path, folder: Path, filename: str | None = None) -> Path | None:
         if not path.exists():
             return None
+        dest_name = filename or path.name
         if self.dry_run:
-            log.info("[DRY-RUN] se movería a %s/: %s", folder.name, path.name)
+            log.info("[DRY-RUN] se movería a %s/: %s", folder.name, dest_name)
             return None
-        dest = self._unique_dest(folder, path.name)
+        dest = self._unique_dest(folder, dest_name)
         try:
             shutil.move(str(path), str(dest))
         except OSError as exc:

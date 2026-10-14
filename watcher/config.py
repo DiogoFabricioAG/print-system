@@ -84,7 +84,6 @@ class Config:
     watch_folder: Path | None = None
     separator: str = " - "
     gui_enabled: bool = True
-    gui_timeout: float = 600.0
     max_retries: int = 5
     retry_base_seconds: float = 5.0
     retry_max_seconds: float = 300.0
@@ -178,7 +177,6 @@ def load_config(require_api_key: bool = True) -> Config:
         watch_folder=Path(watch_folder_raw) if watch_folder_raw else None,
         separator=separator,
         gui_enabled=_env_bool("GUI_ENABLED", True),
-        gui_timeout=_env_float("GUI_TIMEOUT", 600.0),
         max_retries=_env_int("MAX_RETRIES", 5),
         retry_base_seconds=_env_float("RETRY_BASE_SECONDS", 5.0),
         retry_max_seconds=_env_float("RETRY_MAX_SECONDS", 300.0),

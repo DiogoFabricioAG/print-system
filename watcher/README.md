@@ -8,7 +8,7 @@ entrada/nuevo.png
   → valida que el nombre termine en .png + parsea el nombre
   → muestra siempre Tkinter para revisar/editar la venta y confirmar
   → POST /api/ventas; si se confirma Pagó/Crédito, también registra el pago/adelanto
-  → clave de idempotencia en SQLite + mueve el archivo a procesados/
+  → renombra con el nombre estándar y mueve a procesados/; la nota conserva el nombre original
 ```
 
 ## Convención de nombre
@@ -34,7 +34,7 @@ Ejemplo válido:
 polo navidad - karen - deyna - 2polos - 150cm - 80 soles - DTF.png
 ```
 
-Cada PNG abre un diálogo Tkinter **antes de guardar**. Los campos se precargan del nombre y puedes confirmarlos o editarlos. Los cambios afectan solo a la venta; el nombre del archivo se conserva. Si el nombre no se puede parsear, el mismo diálogo permite completar los datos manualmente. Si se cierra o no hay sesión interactiva, el archivo va a `pendientes/`.
+Cada PNG abre un diálogo Tkinter **antes de guardar**, sin límite de tiempo y con vista previa de la imagen. Los campos se precargan del nombre y puedes confirmarlos o editarlos. Al guardar, el archivo se renombra con los datos confirmados; el nombre original queda en la nota de la venta. Si el nombre no se puede parsear, el mismo diálogo permite completar los datos manualmente. Si se cierra o no hay sesión interactiva, el archivo va a `pendientes/`. Mientras el diálogo esté abierto, el worker espera y los demás PNG permanecen en cola.
 
 > El watcher comprueba la extensión `.png`, pero no inspecciona ni convierte el contenido: un TIFF/BMP que termine en `.png` también pasa. El separador es ` - `. Diseño no debe contener esa secuencia; cliente sí puede contenerla.
 
@@ -109,6 +109,8 @@ SEPARATOR=" - "      # separador del nombre de archivo
 .\.venv\Scripts\python watcher.py --dry-run --once   # prueba sin enviar nada a la API
 .\.venv\Scripts\python watcher.py                    # vigila en primer plano
 .\.venv\Scripts\python watcher.py --stats            # procesados / reintentos / pendientes
+.\.venv\Scripts\python demo-gui.py                    # demo visual con imagen generada
+.\.venv\Scripts\python demo-gui.py --image "D:\RIP\foto.tif"  # demo con una imagen real
 ```
 
 | Flag | Descripción |
