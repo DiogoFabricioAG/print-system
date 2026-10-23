@@ -59,7 +59,7 @@ export function SellsToolbar({ onSearch, onRegisterClick, searchTerm, dateRange,
 
       <Button
         onClick={onRegisterClick}
-        className="w-full lg:w-auto h-12 px-6 rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white font-semibold shadow-sm gap-2"
+        className="w-full lg:w-auto h-12 px-6 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-semibold gap-2"
       >
         <Plus className="h-4 w-4" />
         Registrar Venta

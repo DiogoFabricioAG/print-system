@@ -1,13 +1,16 @@
-const API_BASE = "https://functions.diogofabricio17.workers.dev/api"
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL || "https://functions.diogofabricio17.workers.dev/api"
 
-async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const stored = typeof localStorage === "undefined" ? null : localStorage.getItem("printsystem_user")
+  const token = stored ? (() => { try { return JSON.parse(stored).token as string | undefined } catch { return undefined } })() : undefined
   const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options?.headers,
     },
     cache: "no-store",
-    ...options,
   })
 
   const data = await response.json()
@@ -22,6 +25,10 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export interface User {
   id: number
   username: string
+  nombre?: string
+  rol: "jefe" | "trabajador"
+  etapa_orden?: number
+  token: string
 }
 
 export interface Client {
@@ -88,6 +95,7 @@ export const authApi = {
     
     return data.data
   },
+  logout: () => fetchApi<null>("/logout", { method: "POST" }),
 }
 
 export const clientsApi = {
@@ -177,23 +185,28 @@ export const salesApi = {
     }),
 }
 
-export const gastosApi = {
-  getAll: () => fetchApi<Gasto[]>("/gastos"),
-  getById: (id: number) => fetchApi<Gasto>(`/gastos/${id}`),
-  create: (data: { notas: string; monto: number }) =>
-    fetchApi<Gasto>("/gastos", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-  update: (id: number, data: { notas?: string; monto?: number }) =>
-    fetchApi<Gasto>(`/gastos/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
-  delete: (id: number) =>
-    fetchApi<{ success: boolean }>(`/gastos/${id}`, {
-      method: "DELETE",
-    }),
+export interface ProductionSummary {
+  registradas: number[]
+  omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }>
+}
+
+export interface WorkerSale {
+  id: number
+  cliente: string
+  diseno: string
+  fecha: string | null
+  creado_el: string
+  registrado_el: string | null
+  estado: "Pendiente" | "Registrado"
+  faltantes_anteriores: number
+}
+
+export const trackingApi = {
+  getSummary: () => fetchApi<Record<number, ProductionSummary>>("/seguimiento/resumen"),
+  getWorkerSales: () => fetchApi<{ etapa: string; etapa_orden: number; ventas: WorkerSale[] }>("/trabajador/ventas"),
+  markStage: (id: number) => fetchApi<{ venta_id: number; etapa: string }>(`/trabajador/ventas/${id}/registrar`, { method: "POST" }),
+  createWorkerAccount: (data: { nombre: string; username: string; password: string; etapa_orden: number }) =>
+    fetchApi<{ id: number; nombre: string; username: string; etapa_orden: number }>("/trabajadores/cuentas", { method: "POST", body: JSON.stringify(data) }),
 }
 
 export interface Pago {

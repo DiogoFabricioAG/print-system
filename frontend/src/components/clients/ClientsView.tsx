@@ -168,9 +168,9 @@ export function ClientsView() {
           editingClient
             ? {
                 id: String(editingClient.id),
-                nombre: editingClient.nombre,
-                numero: editingClient.numero,
-                descripcion: editingClient.descripcion,
+                name: editingClient.nombre,
+                phone: String(editingClient.numero ?? ""),
+                description: editingClient.descripcion ?? "",
               }
             : null
         }

@@ -1,3 +1,21 @@
 .env
-functions/
 bot/
+
+# Publicar únicamente el código y la configuración no secreta del Worker.
+functions/*
+functions/.*
+!functions/src/
+!functions/migrations/
+!functions/package.json
+!functions/pnpm-lock.yaml
+!functions/tsconfig.json
+!functions/wrangler.jsonc
+!functions/worker-configuration.d.ts
+!functions/README.md
+!functions/AGENTS.md
+functions/credentials.json
+functions/private_key.txt
+functions/test.json
+functions/node_modules/
+functions/.wrangler/
+functions/.dev.vars

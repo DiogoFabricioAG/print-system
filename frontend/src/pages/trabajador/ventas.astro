@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { WorkerSalesView } from '../../components/tracking/WorkerSalesView';
+---
+
+<Layout title="Mis trabajos" showSidebar={false}>
+  <WorkerSalesView client:only="react" />
+</Layout>

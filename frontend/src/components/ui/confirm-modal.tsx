@@ -82,7 +82,7 @@ export function ConfirmModal({
             type="button"
             onClick={handleConfirm}
             disabled={isConfirming}
-            className="rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white shadow-sm disabled:opacity-50"
+            className="rounded-xl bg-sky-700 hover:bg-sky-800 text-white disabled:opacity-50"
           >
             {confirmText}
           </Button>

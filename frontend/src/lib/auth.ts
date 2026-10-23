@@ -3,6 +3,10 @@ import { atom } from "nanostores"
 export interface User {
   id: number
   username: string
+  nombre?: string
+  rol: "jefe" | "trabajador"
+  etapa_orden?: number
+  token: string
 }
 
 export const $user = atom<User | null>(null)

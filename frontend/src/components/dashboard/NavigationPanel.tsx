@@ -15,7 +15,7 @@ export function NavigationPanel() {
       <CardContent className="flex flex-col gap-3">
         <Button
           onClick={() => navigate("/ventas")}
-          className="w-full h-14 text-sm justify-start gap-3 bg-[#30b7ff] hover:bg-[#209fdf] text-white rounded-xl shadow-sm transition-all"
+          className="w-full h-14 text-sm justify-start gap-3 bg-sky-700 hover:bg-sky-800 text-white rounded-xl transition-colors"
         >
           <div className="bg-white/20 p-2 rounded-lg">
             <ShoppingBag className="h-4 w-4" />

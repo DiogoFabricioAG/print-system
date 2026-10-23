@@ -2,9 +2,10 @@ import * as React from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Calendar as CalendarIcon, ChevronDown, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 interface DateRange {
   from: Date | undefined
@@ -45,17 +46,15 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
-          className={`h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium shadow-sm gap-2 justify-start w-full lg:w-auto ${dateRange.from || dateRange.to ? 'border-[#30b7ff] text-[#30b7ff]' : ''}`}
+      <PopoverTrigger
+          className={cn(buttonVariants({ variant: "outline" }), `h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium shadow-sm gap-2 justify-start w-full lg:w-auto ${dateRange.from || dateRange.to ? 'border-sky-700 text-sky-700' : ''}`)}
         >
           <CalendarIcon className="h-4 w-4 text-slate-400" />
           <span className="hidden sm:inline truncate max-w-[150px]">{displayText()}</span>
           <span className="sm:hidden truncate max-w-[80px]">{displayText()}</span>
           {(dateRange.from || dateRange.to) && (
             <X 
-              className="h-3 w-3 ml-auto lg:ml-0 text-[#30b7ff]" 
+              className="h-3 w-3 ml-auto lg:ml-0 text-sky-700"
               onClick={(e) => {
                 e.stopPropagation()
                 onDateRangeChange({ from: undefined, to: undefined })
@@ -63,8 +62,7 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
             />
           )}
           <ChevronDown className="h-4 w-4 text-slate-400 ml-auto lg:ml-0" />
-        </Button>
-      </PopoverTrigger>
+        </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-white rounded-xl border-slate-200 shadow-lg" align="start">
         <Calendar
           mode="range"
@@ -72,7 +70,7 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
           selected={dateRange}
           onSelect={(range) => {
             if (range) {
-              onDateRangeChange(range)
+              onDateRangeChange({ from: range.from, to: range.to })
             }
           }}
           numberOfMonths={2}
@@ -91,7 +89,7 @@ export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePicke
           <Button 
             size="sm" 
             onClick={handleAplicar}
-            className="bg-[#30b7ff] hover:bg-[#209fdf] text-white"
+            className="bg-sky-700 hover:bg-sky-800 text-white"
           >
             Aplicar
           </Button>

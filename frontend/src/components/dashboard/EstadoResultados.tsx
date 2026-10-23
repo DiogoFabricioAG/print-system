@@ -5,35 +5,11 @@ import { Button } from "@/components/ui/button";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { EstadoResultadosPDF } from "./EstadoResultadosPDF";
 import type { ResultadoPDFData } from "./EstadoResultadosPDF";
+import { fetchApi } from "@/lib/api";
 
-interface LineaResultado {
-  monto: number;
-  pct: number;
-}
-
-interface GastosDetalle {
-  total: number;
-  pct: number;
-  detalle: { categoria: string; monto: number; pct: number }[];
-}
-
-interface ResultadoData {
-  periodo: { filtro: string; inicio: string; fin: string };
-  ventas_totales: LineaResultado;
-  costo_ventas: LineaResultado;
-  utilidad_bruta: LineaResultado;
-  gastos_administracion: GastosDetalle;
-  gastos_ventas: GastosDetalle;
-  depreciacion: GastosDetalle;
-  gastos_operativos: LineaResultado;
-  utilidad_antes_impuestos: LineaResultado;
-  impuesto_renta: LineaResultado;
-  utilidad_neta: LineaResultado;
-}
+type ResultadoData = ResultadoPDFData;
 
 type TabKey = "resultados" | "flujos" | "balance";
-
-const API_BASE = "https://functions.diogofabricio17.workers.dev";
 
 function fmt(n: number) {
   return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
@@ -84,15 +60,9 @@ export function EstadosFinancieros() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/api/estado-resultados?filtro_tiempo=${filtro}`);
-      const json = await res.json();
-      if (json.success) {
-        setData(json.data);
-      } else {
-        setError(json.error || "Error desconocido");
-      }
-    } catch {
-      setError("Error de conexión");
+      setData(await fetchApi<ResultadoData>(`/estado-resultados?filtro_tiempo=${filtro}`));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Error de conexión");
     } finally {
       setLoading(false);
     }
@@ -175,7 +145,7 @@ export function EstadosFinancieros() {
                 </div>
                 {data && (
                   <PDFDownloadLink
-                    document={<EstadoResultadosPDF data={data as ResultadoPDFData} />}
+                    document={<EstadoResultadosPDF data={data} />}
                     fileName={`Estado-Resultados-${data.periodo.filtro}-${data.periodo.inicio}.pdf`}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 text-slate-600 h-8 px-3 text-xs font-medium hover:bg-slate-50 transition-colors"
                   >

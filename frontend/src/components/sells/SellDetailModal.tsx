@@ -1,5 +1,6 @@
-import * as React from "react";
 import { formatBusinessDate } from "@/lib/business-date";
+import type { SellData } from "./SellsTable";
+import { getProductionStep, PRODUCTION_STATES } from "@/lib/production-status";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +9,19 @@ import {
 } from "@/components/ui/dialog";
 import {
   User,
-  Receipt,
   Scissors,
   CalendarDays,
   MonitorPlay,
   PackageOpen,
   StickyNote,
+  ListChecks,
+  AlertTriangle,
+  Check,
+  X,
 } from "lucide-react";
 
 interface SellDetailModalProps {
-  sell: any;
+  sell: SellData | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -62,17 +66,21 @@ export function SellDetailModal({
   };
 
   const statusStyle = getStatusColor(sell.status);
+  const productionStep = sell.production ? getProductionStep(sell.production) : 0;
+  const alerts = sell.production?.omisiones.filter((alert, index, all) =>
+    all.findIndex((item) => item.etapa === alert.etapa) === index,
+  ) ?? [];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] bg-slate-50 border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <DialogContent showCloseButton={false} className="max-h-[calc(100dvh-1rem)] max-w-[calc(100%-1rem)] overflow-y-auto rounded-2xl border-slate-200 bg-slate-50 p-0 shadow-2xl sm:max-h-[90vh] sm:max-w-[600px]">
         {/* Top Header con Status Gradient */}
         <div
           className={`h-32 w-full absolute top-0 left-0 bg-gradient-to-b opacity-50 pointer-events-none ${statusStyle.bg}`}
         />
 
-        <div className="p-8 relative z-10">
-          <DialogHeader className="mb-8">
+        <div className="relative z-10 p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:p-8">
+          <DialogHeader className="mb-5 sm:mb-8">
             <div className="flex items-start justify-between">
               <div>
                 <span
@@ -80,33 +88,33 @@ export function SellDetailModal({
                 >
                   {sell.status}
                 </span>
-                <DialogTitle className="text-3xl font-bold text-slate-900 font-display leading-tight">
+                <DialogTitle className="font-display text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
                   S/{" "}
                   {sell.amount.toLocaleString("es-PE", {
                     minimumFractionDigits: 2,
                   })}
                 </DialogTitle>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-400">
-                <Receipt className="w-6 h-6" />
-              </div>
+              <button type="button" onClick={onClose} aria-label="Cerrar información" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm">
+                <X className="h-5 w-5" />
+              </button>
             </div>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Cliente */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex gap-3 sm:gap-4">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
                   Cliente
                 </p>
                 <p className="font-bold text-slate-800 leading-tight">
                   <a 
                     href={`/clientes/detalle?id=${sell.clientId}`} 
-                    className="hover:text-[#30b7ff] transition-colors underline-offset-4 hover:underline"
+                    className="hover:text-sky-700 transition-colors underline-offset-4 hover:underline"
                     title="Ver perfil del cliente"
                   >
                     {sell.client}
@@ -116,12 +124,12 @@ export function SellDetailModal({
             </div>
 
             {/* Fecha */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex gap-3 sm:gap-4">
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
                 <CalendarDays className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
                   Fecha
                 </p>
                 <p className="font-bold text-slate-800 leading-tight">
@@ -133,12 +141,12 @@ export function SellDetailModal({
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4">
             {/* Diseño */}
-            <div className="p-5 border-b border-slate-100 flex gap-4">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex gap-3 sm:gap-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
                 <Scissors className="w-5 h-5" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
                   Diseño / Trabajo
                 </p>
                 <p className="font-medium text-slate-800">{sell.design}</p>
@@ -146,9 +154,9 @@ export function SellDetailModal({
             </div>
 
             {/* Detalles Técnicos */}
-            <div className="p-5 bg-slate-50/50 grid grid-cols-2 gap-4">
+            <div className="p-4 sm:p-5 bg-slate-50/50 grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <PackageOpen className="w-3.5 h-3.5" /> Cant.
                 </p>
                 <p className="font-medium text-slate-700">
@@ -156,7 +164,7 @@ export function SellDetailModal({
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <MonitorPlay className="w-3.5 h-3.5" /> Máquina
                 </p>
                 <p className="font-medium text-slate-700">
@@ -166,14 +174,52 @@ export function SellDetailModal({
             </div>
           </div>
 
+          {sell.production && (
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                  <ListChecks className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-600">Proceso de trabajo</p>
+                  <p className="font-semibold text-slate-800">{PRODUCTION_STATES[productionStep]}</p>
+                </div>
+              </div>
+              <div className="relative mt-5">
+                <div className="absolute left-[16.666%] right-[16.666%] top-4 h-0.5 bg-slate-200" aria-hidden="true" />
+                {productionStep > 0 && <div className="absolute left-[16.666%] top-4 h-0.5 bg-sky-700" style={{ width: productionStep === 1 ? "33.333%" : "66.667%" }} aria-hidden="true" />}
+                <ol className="relative grid grid-cols-3" aria-label="Estados de producción">
+                  {PRODUCTION_STATES.map((state, index) => (
+                    <li key={state} className="flex flex-col items-center gap-2 text-center">
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold ${index < productionStep ? "border-sky-700 bg-sky-700 text-white" : index === productionStep ? "border-sky-700 bg-white text-sky-700" : "border-slate-300 bg-white text-slate-600"}`}>
+                        {index < productionStep ? <Check className="h-4 w-4" /> : index + 1}
+                      </span>
+                      <span className={`text-xs font-semibold ${index === productionStep ? "text-sky-700" : index < productionStep ? "text-slate-700" : "text-slate-600"}`}>{state}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              {alerts.length > 0 && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Etapas sin registrar a tiempo</p>
+                  <ul className="mt-2 space-y-1 pl-6 list-disc">
+                    {alerts.map((alert) => (
+                      <li key={alert.etapa}>{alert.etapa} no estaba registrada cuando se marcó {alert.detectada_al_registrar}.</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Notas */}
           {sell.nota && (
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex gap-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex gap-3 sm:gap-4">
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
                 <StickyNote className="w-5 h-5" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
                   Notas / Observaciones
                 </p>
                 <p className="text-sm text-slate-700 whitespace-pre-wrap">

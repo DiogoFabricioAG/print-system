@@ -2,6 +2,7 @@ import * as React from "react";
 import { ArrowBigLeftDash, Info, LogOut, Table, Search as SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
+import { authApi } from "@/lib/api";
 
 interface TopbarProps {
   inHomePage?: boolean;
@@ -75,8 +76,10 @@ export function Topbar({ inHomePage }: TopbarProps) {
           title={inHomePage ? "Cerrar sesion" : "Volver"}
           onClick={
             inHomePage
-              ? () => {
-                  console.log(1);
+              ? async () => {
+                  await authApi.logout().catch(() => undefined);
+                  localStorage.removeItem("printsystem_user");
+                  window.location.href = "/login";
                 }
               : () => navigate("/")
           }

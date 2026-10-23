@@ -103,7 +103,7 @@ export function EstadoResultadosPDF({ data }: { data: ResultadoPDFData }) {
             {line.dividerBefore === "strong" && <View style={styles.dividerStrong} />}
             {line.dividerBefore === "normal" && <View style={styles.divider} />}
             {line.dividerBefore === "net" && <View style={styles.dividerNet} />}
-            <View style={[styles.row, line.bold && styles.rowBold, line.indent && styles.rowIndent]}>
+            <View style={[styles.row, ...(line.bold ? [styles.rowBold] : []), ...(line.indent ? [styles.rowIndent] : [])]}>
               <Text style={line.bold ? styles.cellLabelBold : line.indent ? styles.cellLabelIndent : styles.cellLabel}>
                 {line.label}
               </Text>

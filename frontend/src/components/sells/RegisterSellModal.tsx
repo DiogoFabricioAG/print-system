@@ -492,7 +492,7 @@ export function RegisterSellModal({
             <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 text-sm h-9 sm:h-10 flex-1 sm:flex-none" disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" className="rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white shadow-sm text-sm h-9 sm:h-10 flex-1 sm:flex-none" disabled={isSubmitting || !selectedClientId}>
+            <Button type="submit" className="rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-sm h-9 sm:h-10 flex-1 sm:flex-none" disabled={isSubmitting || !selectedClientId}>
               {isSubmitting ? "Registrando..." : parsedEntries.length > 1 ? `Registrar (${currentEntry + 1}/${parsedEntries.length})` : "Registrar"}
             </Button>
           </DialogFooter>

@@ -1,14 +1,8 @@
 import * as React from "react"
 import { ChevronDown, Search, X, Plus } from "lucide-react"
 import { RegisterClientModal } from "@/components/clients/RegisterClientModal"
-import { clientsApi } from "@/lib/api"
+import { clientsApi, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
-
-interface Client {
-  id: number
-  nombre: string
-  numero: number
-}
 
 interface ClientAutocompleteProps {
   clients: Client[]
@@ -128,7 +122,7 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
           <button
             type="button"
             onClick={() => setIsRegisterModalOpen(true)}
-            className="w-full px-4 py-3 text-left bg-slate-50 hover:bg-slate-100 border-b border-slate-100 flex items-center gap-2 text-[#30b7ff] font-semibold transition-colors shrink-0"
+            className="w-full px-4 py-3 text-left bg-slate-50 hover:bg-slate-100 border-b border-slate-100 flex items-center gap-2 text-sky-700 font-semibold transition-colors shrink-0"
           >
             <Plus className="h-4 w-4" />
             + Crear Cliente
@@ -151,7 +145,7 @@ export function ClientAutocomplete({ clients, value, onChange, placeholder = "Bu
                         handleSelect(client.id)
                       }}
                       className={`w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors ${
-                        client.id === value ? "bg-[#30b7ff]/10 text-[#30b7ff]" : "text-slate-700"
+                        client.id === value ? "bg-sky-50 text-sky-700" : "text-slate-700"
                       }`}
                     >
                       <span className="font-medium">{client.nombre}</span>

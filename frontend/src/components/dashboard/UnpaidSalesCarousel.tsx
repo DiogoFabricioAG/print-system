@@ -30,7 +30,7 @@ interface UnpaidSalesCarouselProps {
 const getStatusBadge = (status: string) => {
   const styles: Record<string, string> = {
     "Debe": "bg-[#ff9f43]/10 text-[#ff9f43] hover:bg-[#ff9f43]/20",
-    "En Producción": "bg-[#30b7ff]/10 text-[#30b7ff] hover:bg-[#30b7ff]/20",
+    "En Producción": "bg-sky-50 text-sky-700 hover:bg-sky-100",
   };
   return styles[status] || "bg-slate-100 text-slate-600";
 };

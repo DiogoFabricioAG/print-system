@@ -187,7 +187,7 @@ export function ChatBotView() {
               <span className="text-xs text-slate-600 w-24 truncate">{label}</span>
               <div className="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-md transition-all"
+                  className="h-full rounded-md bg-sky-700 transition-all"
                   style={{ width: `${(chartData.values[i] / maxValue) * 100}%` }}
                 />
               </div>
@@ -203,17 +203,13 @@ export function ChatBotView() {
 
   return (
     <div className="h-[calc(100vh-220px)] flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-indigo-50">
-        <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md">
+      <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-6 py-4">
+        <div className="rounded-xl bg-slate-800 p-2.5">
           <Bot className="h-5 w-5 text-white" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-slate-800">Asistente IA</h2>
           <p className="text-xs text-slate-500">Consulta tu base de datos</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-xs font-medium text-slate-600">En línea</span>
         </div>
       </div>
 
@@ -231,8 +227,8 @@ export function ChatBotView() {
               <div
                 className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${
                   message.role === "user"
-                    ? "bg-[#30b7ff] text-white"
-                    : "bg-gradient-to-br from-violet-500 to-indigo-600 text-white"
+                    ? "bg-sky-700 text-white"
+                    : "bg-slate-800 text-white"
                 }`}
               >
                 {message.role === "user" ? (
@@ -244,7 +240,7 @@ export function ChatBotView() {
               <div
                 className={`px-4 py-3 rounded-2xl shadow-sm ${
                   message.role === "user"
-                    ? "bg-[#30b7ff] text-white rounded-br-md"
+                    ? "bg-sky-700 text-white rounded-br-md"
                     : "bg-white text-slate-700 border border-slate-200 rounded-bl-md"
                 }`}
               >
@@ -267,7 +263,7 @@ export function ChatBotView() {
                     <p className="text-sm whitespace-pre-line">{message.content}</p>
                     <p
                       className={`text-xs mt-2 ${
-                        message.role === "user" ? "text-white/70" : "text-slate-400"
+                        message.role === "user" ? "text-white/85" : "text-slate-500"
                       }`}
                     >
                       {message.timestamp.toLocaleTimeString("es-PE", {
@@ -284,7 +280,7 @@ export function ChatBotView() {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-slate-800">
                 <Bot className="h-4 w-4 text-white" />
               </div>
               <div className="px-4 py-3 rounded-2xl bg-white border border-slate-200 rounded-bl-md shadow-sm">
@@ -349,12 +345,12 @@ export function ChatBotView() {
           <Button
             onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}
-            className="h-12 w-12 p-0 rounded-xl bg-[#30b7ff] hover:bg-[#209fdf] text-white font-semibold shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center"
+            className="h-12 w-12 p-0 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 flex items-center justify-center"
           >
             <Send className="h-5 w-5" />
           </Button>
         </div>
-        <p className="text-center text-xs text-slate-400 mt-3">
+        <p className="text-center text-xs text-slate-600 mt-3">
           Powered by IA • Consulta tu base de datos en lenguaje natural
         </p>
       </div>

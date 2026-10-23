@@ -1,0 +1,6 @@
+# Copia este archivo a .dev.vars (ignorado por git) para desarrollo local.
+# O genera una key segura automáticamente con: npm run api-key
+# Clave que deben enviar los servicios externos en el header X-API-Key.
+API_KEY=dev-api-key-cambiar
+# Orígenes exentos de API key en local.
+ALLOWED_ORIGINS=http://localhost:4321,http://localhost:8787

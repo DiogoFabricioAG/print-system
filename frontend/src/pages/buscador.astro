@@ -14,7 +14,7 @@ import { Topbar } from '../components/dashboard/Topbar';
         <div id="search-overlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 hidden">
           <div class="w-10 h-10 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin mb-3"></div>
           <p class="text-sm font-semibold text-slate-700">Analizando imagen...</p>
-          <p class="text-xs text-slate-400 mt-1">Esto puede tomar unos segundos</p>
+          <p class="text-xs text-slate-600 mt-1">Esto puede tomar unos segundos</p>
         </div>
 
         <div class="flex items-center gap-3 mb-4">
@@ -34,12 +34,12 @@ import { Topbar } from '../components/dashboard/Topbar';
         >
           <div class="flex flex-col items-center gap-2">
             <div class="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-              <svg class="h-6 w-6 text-slate-400 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg class="h-6 w-6 text-slate-600 group-hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </div>
             <p class="text-sm font-semibold text-slate-600 group-hover:text-blue-700">
               Arrastra una imagen aquí o haz clic
             </p>
-            <p class="text-xs text-slate-400">o pega con <strong>Ctrl+V</strong></p>
+            <p class="text-xs text-slate-600">o pega con <strong>Ctrl+V</strong></p>
           </div>
           <input type="file" accept="image/*" class="hidden" />
         </label>
@@ -69,12 +69,12 @@ import { Topbar } from '../components/dashboard/Topbar';
         >
           <div class="flex flex-col items-center gap-2">
             <div class="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
-              <svg class="h-6 w-6 text-slate-400 group-hover:text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg class="h-6 w-6 text-slate-600 group-hover:text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </div>
             <p class="text-sm font-semibold text-slate-600 group-hover:text-emerald-700">
               Arrastra un archivo .cdr aquí
             </p>
-            <p class="text-xs text-slate-400">o haz clic — solo CorelDRAW</p>
+            <p class="text-xs text-slate-600">o haz clic — solo CorelDRAW</p>
           </div>
           <input id="index-file-input" type="file" accept=".cdr" class="hidden" />
         </label>
@@ -93,14 +93,14 @@ import { Topbar } from '../components/dashboard/Topbar';
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Preview (Ctrl+V)</p>
             <div
               id="index-paste-area"
-              class="w-full h-32 border-2 border-dashed border-amber-200 rounded-xl flex items-center justify-center text-xs text-slate-400 hover:border-amber-400 hover:bg-amber-50/50 transition-colors cursor-text"
+              class="w-full h-32 border-2 border-dashed border-amber-200 rounded-xl flex items-center justify-center text-xs text-slate-600 hover:border-amber-400 hover:bg-amber-50/50 transition-colors cursor-text"
               tabindex="0"
             >
               Haz clic aquí y pega con <strong>Ctrl+V</strong> una captura del diseño
             </div>
-            <img id="index-preview" class="mt-2 w-full max-h-48 object-contain rounded-lg border border-slate-100 hidden" alt="Preview" />
+            <div id="index-preview" class="mt-2 hidden"></div>
           </div>
-          <button id="index-btn" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors">
+          <button id="index-btn" class="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm transition-colors">
             Indexar archivo
           </button>
         </div>
@@ -119,13 +119,19 @@ import { Topbar } from '../components/dashboard/Topbar';
         </button>
       </div>
       <div id="indexed-list" class="space-y-2">
-        <p class="text-sm text-slate-400 text-center py-4">Haz clic en "Cargar listado" para ver los archivos indexados</p>
+        <p class="text-sm text-slate-600 text-center py-4">Haz clic en "Cargar listado" para ver los archivos indexados</p>
       </div>
     </div>
   </div>
 </Layout>
 
 <script>
+  declare global {
+    interface Window {
+      _indexThumbnail: string | null;
+      deleteIndexedFile: (id: string, btn: HTMLButtonElement) => Promise<void>;
+    }
+  }
   const BOT = 'https://bot.diogofabricio17.workers.dev';
 
   function setupDropzone(id: string, fileType: string) {
@@ -180,15 +186,15 @@ import { Topbar } from '../components/dashboard/Topbar';
             data.results.map((r: any) => `
               <div class="bg-white rounded-xl border border-slate-200 p-3 mb-2 hover:shadow-sm transition-shadow">
                 <div class="flex items-center gap-3">
-                  ${r.thumbnail ? `<img src="${r.thumbnail}" class="w-12 h-12 object-cover rounded-lg bg-slate-100" />` : `<div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs">${r.extension || '?'}</div>`}
+                  ${r.thumbnail ? `<img src="${r.thumbnail}" class="w-12 h-12 object-cover rounded-lg bg-slate-100" />` : `<div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-xs">${r.extension || '?'}</div>`}
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-slate-800 truncate">${r.nombre}</p>
                     <p class="text-xs text-slate-500 truncate">${r.ruta}</p>
-                    ${r.descripcion ? `<p class="text-xs text-slate-400 mt-0.5 line-clamp-2">${r.descripcion}</p>` : ''}
+                    ${r.descripcion ? `<p class="text-xs text-slate-600 mt-0.5 line-clamp-2">${r.descripcion}</p>` : ''}
                   </div>
                   <div class="shrink-0 flex flex-col items-end gap-1">
                     ${data.searchByVision ? `<span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">${r.score}%</span>` : ''}
-                    <button onclick="navigator.clipboard.writeText('${r.ruta}')" class="text-xs text-slate-400 hover:text-blue-600 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors" title="Copiar ruta">📋</button>
+                    <button onclick="navigator.clipboard.writeText('${r.ruta}')" class="text-xs text-slate-600 hover:text-blue-600 px-2 py-1 rounded-md hover:bg-blue-50 transition-colors" title="Copiar ruta">📋</button>
                   </div>
                 </div>
               </div>
@@ -196,7 +202,7 @@ import { Topbar } from '../components/dashboard/Topbar';
         } else {
           resultsDiv.innerHTML = `<p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Resultados</p>
             <div class="text-center py-6">
-              <p class="text-sm text-slate-400 mb-3">${data.message || 'No se encontraron archivos similares'}</p>
+              <p class="text-sm text-slate-600 mb-3">${data.message || 'No se encontraron archivos similares'}</p>
               ${data.queryDescription ? `<div class="bg-amber-50 rounded-xl p-4 border border-amber-100 text-left mx-auto max-w-md">
                 <p class="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">💡 Descripción de tu imagen:</p>
                 <p class="text-sm text-amber-800 leading-relaxed">${data.queryDescription}</p>
@@ -218,9 +224,10 @@ import { Topbar } from '../components/dashboard/Topbar';
       rutaInput.value = `C:\\Disenos\\${file.name}`;
       formDiv.classList.remove('hidden');
       window._indexThumbnail = null;
-      const previewImg = document.getElementById('index-preview') as HTMLImageElement;
+      const previewArea = document.getElementById('index-preview') as HTMLDivElement;
       const pasteArea = document.getElementById('index-paste-area')!;
-      previewImg.classList.add('hidden');
+      previewArea.replaceChildren();
+      previewArea.classList.add('hidden');
       pasteArea.classList.remove('hidden');
       pasteArea.innerHTML = `Haz clic aquí y pega con <strong>Ctrl+V</strong> una captura del diseño`;
     }
@@ -247,7 +254,7 @@ import { Topbar } from '../components/dashboard/Topbar';
 
   // ── Clipboard paste for index preview ──
   const pasteArea = document.getElementById('index-paste-area');
-  const previewImg = document.getElementById('index-preview') as HTMLImageElement;
+  const previewArea = document.getElementById('index-preview') as HTMLDivElement;
   pasteArea?.addEventListener('click', () => pasteArea.focus());
   pasteArea?.addEventListener('paste', (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -261,8 +268,12 @@ import { Topbar } from '../components/dashboard/Topbar';
         reader.onload = () => {
           const dataUrl = reader.result as string;
           (window as any)._indexThumbnail = dataUrl;
+          const previewImg = new Image();
           previewImg.src = dataUrl;
-          previewImg.classList.remove('hidden');
+          previewImg.alt = 'Vista previa del diseño';
+          previewImg.className = 'w-full max-h-48 object-contain rounded-lg border border-slate-100';
+          previewArea.replaceChildren(previewImg);
+          previewArea.classList.remove('hidden');
           pasteArea.classList.add('hidden');
         };
         reader.readAsDataURL(blob);
@@ -337,18 +348,18 @@ import { Topbar } from '../components/dashboard/Topbar';
       const files = data.results || [];
 
       if (files.length === 0) {
-        listDiv.innerHTML = `<p class="text-sm text-slate-400 text-center py-4">No hay archivos indexados</p>`;
+        listDiv.innerHTML = `<p class="text-sm text-slate-600 text-center py-4">No hay archivos indexados</p>`;
         return;
       }
 
       listDiv.innerHTML = files.map((f: any) => `
         <div class="flex items-center gap-3 bg-white rounded-xl border border-slate-200 p-3 hover:shadow-sm transition-shadow group">
-          ${f.thumbnail ? `<img src="${f.thumbnail}" class="w-10 h-10 object-cover rounded-lg bg-slate-100 shrink-0" />` : `<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs shrink-0">${f.extension || '?'}</div>`}
+          ${f.thumbnail ? `<img src="${f.thumbnail}" class="w-10 h-10 object-cover rounded-lg bg-slate-100 shrink-0" />` : `<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-xs shrink-0">${f.extension || '?'}</div>`}
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-slate-800 truncate">${f.nombre}</p>
             <p class="text-xs text-slate-500 truncate">${f.ruta}</p>
           </div>
-          <button onclick="deleteIndexedFile('${f.id}', this)" class="shrink-0 text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors">
+          <button onclick="deleteIndexedFile('${f.id}', this)" class="shrink-0 text-xs text-slate-600 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors">
             Eliminar
           </button>
         </div>
@@ -363,7 +374,7 @@ import { Topbar } from '../components/dashboard/Topbar';
       // Second click: execute delete
       btn.disabled = true;
       btn.textContent = 'Eliminando...';
-      btn.className = 'shrink-0 text-xs text-slate-300 px-2 py-1 rounded-md font-medium';
+      btn.className = 'shrink-0 text-xs text-slate-500 px-2 py-1 rounded-md font-medium';
       try {
         const res = await fetch(`${BOT}/index-file/${encodeURIComponent(id)}`, { method: 'DELETE' });
         const data = await res.json();
@@ -371,7 +382,7 @@ import { Topbar } from '../components/dashboard/Topbar';
           btn.closest('.flex')?.remove();
           const listDiv = document.getElementById('indexed-list')!;
           if (!listDiv.querySelector('.flex')) {
-            listDiv.innerHTML = `<div class="text-center py-8"><p class="text-sm text-slate-400">No hay archivos indexados</p><p class="text-xs text-slate-300 mt-1">Indexa tu primer archivo .cdr para empezar</p></div>`;
+            listDiv.innerHTML = `<div class="text-center py-8"><p class="text-sm text-slate-600">No hay archivos indexados</p><p class="text-xs text-slate-500 mt-1">Indexa tu primer archivo .cdr para empezar</p></div>`;
           }
         } else {
           btn.textContent = 'Eliminar';
@@ -395,7 +406,7 @@ import { Topbar } from '../components/dashboard/Topbar';
       setTimeout(() => {
         if (btn.dataset.confirming === 'true') {
           btn.textContent = 'Eliminar';
-          btn.className = 'shrink-0 text-xs text-slate-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors';
+          btn.className = 'shrink-0 text-xs text-slate-600 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md font-medium transition-colors';
           btn.dataset.confirming = 'false';
         }
       }, 4000);

@@ -6,7 +6,7 @@ import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
-import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
+import { salesApi, clientsApi, pagosApi, trackingApi, type Sale, type Client, type ProductionSummary } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 import { getBusinessDateKey, getCalendarDateKey } from "@/lib/business-date"
 
@@ -17,7 +17,7 @@ interface DateRange {
   to: Date | undefined
 }
 
-function mapSaleToViewModel(sale: Sale): SellData {
+function mapSaleToViewModel(sale: Sale, production?: ProductionSummary): SellData {
   return {
     id: String(sale.id),
     design: sale.diseno,
@@ -30,6 +30,7 @@ function mapSaleToViewModel(sale: Sale): SellData {
     cantidad: sale.cantidad,
     metro_total: sale.metro_total,
     maquina: sale.maquina,
+    production,
   }
 }
 
@@ -66,11 +67,12 @@ export function SellsView() {
   const fetchData = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [salesData, clientsData] = await Promise.all([
+      const [salesData, clientsData, summaries] = await Promise.all([
         salesApi.getAll(),
-        clientsApi.getAll()
+        clientsApi.getAll(),
+        trackingApi.getSummary().catch(() => null)
       ])
-      setSales(salesData.map(mapSaleToViewModel))
+      setSales(salesData.map((sale) => mapSaleToViewModel(sale, summaries ? (summaries[sale.id] ?? { registradas: [], omisiones: [] }) : undefined)))
       setClients(clientsData)
     } catch (error) {
       showToast.error("Error al cargar datos")
@@ -329,17 +331,17 @@ export function SellsView() {
 
             <div className="p-4 space-y-3">
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Cliente</p>
-                <a href={`/clientes/detalle?id=${noteSell.clientId}`} className="text-sm font-medium text-[#30b7ff] hover:underline">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Cliente</p>
+                <a href={`/clientes/detalle?id=${noteSell.clientId}`} className="text-sm font-medium text-sky-700 hover:underline">
                   {noteSell.client}
                 </a>
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Diseño</p>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Diseño</p>
                 <p className="text-sm text-slate-700">{noteSell.design}</p>
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Nota</p>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Nota</p>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-amber-50/50 rounded-lg p-3 border border-amber-100/50">
                   {noteSell.nota}
                 </p>

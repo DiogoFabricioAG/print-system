@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatBusinessDate } from "@/lib/business-date";
+import type { ProductionSummary } from "@/lib/api";
+import { getProductionStep, PRODUCTION_STATES } from "@/lib/production-status";
 
 export interface SellData {
   id: string;
@@ -23,6 +25,7 @@ export interface SellData {
   cantidad?: string;
   metro_total?: number;
   maquina?: string;
+  production?: ProductionSummary;
 }
 
 interface SellsTableProps {
@@ -86,7 +89,43 @@ export function SellsTable({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+        {sells.map((sell) => (
+          <article key={sell.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${highlightedId === sell.id ? "border-amber-300" : "border-slate-200"}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <a href={`/clientes/detalle?id=${sell.clientId}`} className="block break-words text-base font-bold text-slate-900 hover:text-sky-600">{sell.client}</a>
+                <p className="mt-1 text-xs text-slate-500">Venta #{sell.id} · {formatBusinessDate(sell.date)}</p>
+              </div>
+              <span className={`shrink-0 rounded-lg border px-2 py-1 text-xs font-bold ${getStatusBadge(sell.status)}`}>{sell.status}</span>
+            </div>
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Diseño</p>
+              <p className="mt-1 break-words text-sm leading-6 text-slate-800">{sell.design}</p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
+              <div>
+                <p className="text-xs text-slate-500">Proceso</p>
+                <p className="mt-1 text-sm font-bold text-slate-900">{sell.production ? PRODUCTION_STATES[getProductionStep(sell.production)] : "No disponible"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Pago</p>
+                <p className="mt-1 text-sm font-bold tabular-nums text-slate-900">S/ {sell.amount.toLocaleString("es-PE")}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+              <span>Metro: {sell.metro_total != null ? `${sell.metro_total} m` : "—"}</span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4">
+              <Button variant="outline" className="min-h-11 rounded-xl border-slate-200 text-slate-700" onClick={() => onViewSell(sell)}><Info className="mr-2 h-4 w-4" /> Información</Button>
+              <Button variant="outline" className="min-h-11 rounded-xl border-slate-200 text-slate-700" onClick={() => onEditSell(sell)}><Edit2 className="mr-2 h-4 w-4" /> Editar</Button>
+              {onViewNote && sell.nota && <Button variant="outline" className="col-span-2 min-h-11 rounded-xl border-amber-200 text-amber-700" onClick={() => onViewNote(sell)}><StickyNote className="mr-2 h-4 w-4" /> Ver nota</Button>}
+            </div>
+          </article>
+        ))}
+        {sells.length === 0 && <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 sm:col-span-2">No se encontraron ventas.</div>}
+      </div>
+      <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow className="border-slate-200 hover:bg-transparent">
@@ -104,6 +143,9 @@ export function SellsTable({
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">
                 Estado
+              </TableHead>
+              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+                Proceso
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-6">
                 Fecha
@@ -126,7 +168,7 @@ export function SellsTable({
                 <TableCell className="font-medium text-slate-900 py-4 px-6">
                   <a
                     href={`/clientes/detalle?id=${sell.clientId}`}
-                    className="hover:text-[#30b7ff] transition-colors underline-offset-4 hover:underline"
+                    className="hover:text-sky-700 transition-colors underline-offset-4 hover:underline"
                     title="Ver perfil del cliente"
                   >
                     {sell.client}
@@ -146,6 +188,13 @@ export function SellsTable({
                     className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(sell.status)}`}
                   >
                     {sell.status}
+                  </span>
+                </TableCell>
+                <TableCell className="py-4 px-6">
+                  <span className="text-xs font-semibold text-slate-700">
+                    {!sell.production
+                      ? "No disponible"
+                      : PRODUCTION_STATES[getProductionStep(sell.production)]}
                   </span>
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
@@ -189,7 +238,7 @@ export function SellsTable({
             {sells.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="h-32 text-center text-slate-500"
                 >
                   No se encontraron ventas.
@@ -203,7 +252,7 @@ export function SellsTable({
       {hasMore && (
         <div ref={observerTarget} className="flex justify-center py-6">
           <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-slate-50 border border-slate-100 rounded-full px-5 py-2 shadow-sm animate-pulse">
-            <Loader2 className="h-4 w-4 animate-spin text-[#30b7ff]" />
+            <Loader2 className="h-4 w-4 animate-spin text-sky-700" />
             Cargando más trabajos...
           </div>
         </div>
