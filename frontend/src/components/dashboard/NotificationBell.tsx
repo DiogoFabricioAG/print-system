@@ -87,7 +87,7 @@ export function NotificationBell() {
   const unread = data?.no_leidas ?? 0;
 
   return (
-    <div ref={rootRef} className="sm:relative">
+    <div ref={rootRef}>
       <button
         type="button"
         aria-label={`Notificaciones${unread ? `, ${unread} sin leer` : ""}`}
