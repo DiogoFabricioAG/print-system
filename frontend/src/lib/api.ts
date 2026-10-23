@@ -188,6 +188,7 @@ export const salesApi = {
 export interface ProductionSummary {
   registradas: number[]
   omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }>
+  historica_terminada?: boolean
 }
 
 export interface WorkerSale {

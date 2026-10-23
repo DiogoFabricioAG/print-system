@@ -112,7 +112,7 @@ export async function ensureSchema(db: D1Database) {
 
     await db.exec(`PRAGMA foreign_keys = ON;`);
     await db.exec(`CREATE TABLE IF NOT EXISTS clientes ( id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE, numero BIGINT UNIQUE, descripcion TEXT, creado_el DATETIME DEFAULT CURRENT_TIMESTAMP );`);
-    await db.exec(`CREATE TABLE IF NOT EXISTS ventas ( id INTEGER PRIMARY KEY AUTOINCREMENT, "diseño" TEXT NOT NULL, cliente_id INTEGER NOT NULL, cantidad TEXT, metro_total DOUBLE, maquina TEXT, pago DOUBLE NOT NULL, estado TEXT, nota TEXT, creado_el DATETIME DEFAULT CURRENT_TIMESTAMP, fecha TEXT, FOREIGN KEY (cliente_id) REFERENCES clientes(id) );`);
+    await db.exec(`CREATE TABLE IF NOT EXISTS ventas ( id INTEGER PRIMARY KEY AUTOINCREMENT, "diseño" TEXT NOT NULL, cliente_id INTEGER NOT NULL, cantidad TEXT, metro_total DOUBLE, maquina TEXT, pago DOUBLE NOT NULL, estado TEXT, nota TEXT, creado_el DATETIME DEFAULT CURRENT_TIMESTAMP, fecha TEXT, produccion_historica_terminada INTEGER NOT NULL DEFAULT 0 CHECK (produccion_historica_terminada IN (0, 1)), FOREIGN KEY (cliente_id) REFERENCES clientes(id) );`);
     await ensureUserSchema(db);
     await db.exec(`CREATE TABLE IF NOT EXISTS pagos ( id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL, pago DOUBLE NOT NULL, nota TEXT, fecha TEXT DEFAULT (date('now', '-5 hours')), FOREIGN KEY (cliente_id) REFERENCES clientes(id) );`);
     await db.exec(`CREATE TABLE IF NOT EXISTS compras ( id INTEGER PRIMARY KEY AUTOINCREMENT, tipo TEXT NOT NULL, categoria TEXT NOT NULL, monto DOUBLE NOT NULL, notas TEXT, creado_el DATETIME DEFAULT CURRENT_TIMESTAMP );`);
@@ -128,6 +128,9 @@ export async function ensureSchema(db: D1Database) {
 
     // Add fecha to ventas if it doesn't exist (bases creadas antes de la columna)
     try { await db.exec(`ALTER TABLE ventas ADD COLUMN fecha TEXT;`); } catch (_) {}
+
+    // Las ventas nuevas inician en Impreso; la migración marca las ventas históricas.
+    try { await db.exec(`ALTER TABLE ventas ADD COLUMN produccion_historica_terminada INTEGER NOT NULL DEFAULT 0 CHECK (produccion_historica_terminada IN (0, 1));`); } catch (_) {}
 
     // Preserve explicitly selected dates. Fill missing dates, and correct the
     // UTC date selected by older clients between 00:00 and 04:59 UTC.

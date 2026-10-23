@@ -13,10 +13,16 @@ se crea una alerta permanente para el jefe en `venta_etapas_omisiones`. Aunque
 la etapa anterior se registre después, la alerta conserva que se omitió en el
 momento del avance. El jefe ve el estado de producción en la columna `Proceso`:
 **Impreso** al crear la venta, **Planchado** cuando se registra Impresión y
-**Procesado** cuando se registra Planchar (o Entregado). El modal de información
-muestra la línea de tiempo `Impreso → Planchado → Procesado` y el detalle de las
+**Procesado** cuando se registra Planchar y **Terminado** cuando se registra Entregado. El modal de información
+muestra la línea de tiempo `Impreso → Planchado → Procesado → Terminado` y el detalle de las
 etapas omitidas. `Impreso` es el estado inicial de la venta; no implica que un
 trabajador ya haya registrado la etapa de impresión.
+
+La migración `0002_ventas_historicas_terminadas.sql` marca todas las ventas
+existentes en ese momento como **Terminado**, sin inventar registros de etapas.
+Esas ventas se conservan en la vista del jefe y no aparecen como pendientes a
+los trabajadores. Las ventas creadas después inician en **Impreso** y pasan a
+**Terminado** al registrar la etapa Entregado.
 
 ## Datos y API
 

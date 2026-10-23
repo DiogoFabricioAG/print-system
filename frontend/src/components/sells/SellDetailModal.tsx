@@ -186,9 +186,9 @@ export function SellDetailModal({
                 </div>
               </div>
               <div className="relative mt-5">
-                <div className="absolute left-[16.666%] right-[16.666%] top-4 h-0.5 bg-slate-200" aria-hidden="true" />
-                {productionStep > 0 && <div className="absolute left-[16.666%] top-4 h-0.5 bg-sky-700" style={{ width: productionStep === 1 ? "33.333%" : "66.667%" }} aria-hidden="true" />}
-                <ol className="relative grid grid-cols-3" aria-label="Estados de producción">
+                <div className="absolute left-[12.5%] right-[12.5%] top-4 h-0.5 bg-slate-200" aria-hidden="true" />
+                {productionStep > 0 && <div className="absolute left-[12.5%] top-4 h-0.5 bg-sky-700" style={{ width: `${productionStep * 25}%` }} aria-hidden="true" />}
+                <ol className="relative grid grid-cols-4" aria-label="Estados de producción">
                   {PRODUCTION_STATES.map((state, index) => (
                     <li key={state} className="flex flex-col items-center gap-2 text-center">
                       <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold ${index < productionStep ? "border-sky-700 bg-sky-700 text-white" : index === productionStep ? "border-sky-700 bg-white text-sky-700" : "border-slate-300 bg-white text-slate-600"}`}>
@@ -199,6 +199,9 @@ export function SellDetailModal({
                   ))}
                 </ol>
               </div>
+              {sell.production.historica_terminada && (
+                <p className="mt-4 text-sm text-slate-600">Venta anterior a este cambio, marcada como terminada. La línea de tiempo no representa registros individuales de sus etapas.</p>
+              )}
               {alerts.length > 0 && (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Etapas sin registrar a tiempo</p>

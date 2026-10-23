@@ -37,11 +37,15 @@ export function registerSeguimientoRoutes(app: App) {
 
   app.get("/api/seguimiento/resumen", async (c) => {
     await ensureSchema(c.env.DB);
-    const [registradas, omisiones] = await Promise.all([
+    const [registradas, omisiones, historicas] = await Promise.all([
       c.env.DB.prepare("SELECT venta_id, orden FROM venta_etapas_registradas ORDER BY orden").all(),
       c.env.DB.prepare("SELECT venta_id, orden_omitido, detectado_en_orden, detectado_el FROM venta_etapas_omisiones ORDER BY detectado_el").all(),
+      c.env.DB.prepare("SELECT id FROM ventas WHERE produccion_historica_terminada = 1").all(),
     ]);
-    const bySale: Record<number, { registradas: number[]; omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }> }> = {};
+    const bySale: Record<number, { registradas: number[]; omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }>; historica_terminada?: boolean }> = {};
+    for (const row of historicas.results) {
+      bySale[Number(row.id)] = { registradas: [], omisiones: [], historica_terminada: true };
+    }
     for (const row of registradas.results) {
       const id = Number(row.venta_id);
       (bySale[id] ??= { registradas: [], omisiones: [] }).registradas.push(Number(row.orden));
@@ -67,6 +71,7 @@ export function registerSeguimientoRoutes(app: App) {
               (SELECT COUNT(*) FROM venta_etapas_registradas p WHERE p.venta_id = v.id AND p.orden < ?) AS anteriores_registradas
        FROM ventas v JOIN clientes c ON c.id = v.cliente_id
        LEFT JOIN venta_etapas_registradas r ON r.venta_id = v.id AND r.orden = ?
+       WHERE v.produccion_historica_terminada = 0
        ORDER BY v.id DESC`,
     ).bind(session.etapa_orden, session.etapa_orden).all();
     return c.json({ success: true, data: {
@@ -90,7 +95,7 @@ export function registerSeguimientoRoutes(app: App) {
     const [registro] = await c.env.DB.batch([
       c.env.DB.prepare(
         `INSERT OR IGNORE INTO venta_etapas_registradas (venta_id, orden, trabajador_id)
-         SELECT id, ?, ? FROM ventas WHERE id = ?`,
+         SELECT id, ?, ? FROM ventas WHERE id = ? AND produccion_historica_terminada = 0`,
       ).bind(orden, session.actor_id, id),
       c.env.DB.prepare(
         `INSERT OR IGNORE INTO venta_etapas_omisiones (venta_id, orden_omitido, detectado_en_orden)
