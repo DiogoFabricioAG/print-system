@@ -35,22 +35,25 @@ const navItems = [
 		<script is:inline>
 			function checkAuth() {
 				const user = localStorage.getItem('printsystem_user');
-				const isLoginPage = window.location.pathname === '/login';
+				const path = window.location.pathname.replace(/\/$/, '') || '/';
+				const isLoginPage = path === '/login';
 				if (isLoginPage && new URLSearchParams(window.location.search).has('cambiar')) {
 					localStorage.removeItem('printsystem_user');
 					return;
 				}
 				let session = null;
 				try { session = user ? JSON.parse(user) : null; } catch { localStorage.removeItem('printsystem_user'); }
-				
-				if ((!session || !session.token) && !isLoginPage) {
-					window.location.href = '/login';
-				} else if (session?.rol === 'trabajador' && !window.location.pathname.startsWith('/trabajador')) {
-					window.location.href = '/trabajador/ventas';
-				} else if (session?.rol === 'jefe' && window.location.pathname.startsWith('/trabajador')) {
-					window.location.href = '/ventas';
-				} else if (session && isLoginPage) {
-					window.location.href = session.rol === 'trabajador' ? '/trabajador/ventas' : '/';
+				if (!session?.token || !['jefe', 'trabajador'].includes(session.rol)) {
+					localStorage.removeItem('printsystem_user');
+					if (!isLoginPage) window.location.replace('/login');
+					return;
+				}
+				if (isLoginPage) {
+					window.location.replace(session.rol === 'trabajador' ? '/trabajador/ventas' : '/');
+				} else if (session.rol === 'trabajador' && !path.startsWith('/trabajador')) {
+					window.location.replace('/trabajador/ventas');
+				} else if (session.rol === 'jefe' && path.startsWith('/trabajador')) {
+					window.location.replace('/ventas');
 				}
 			}
 			
