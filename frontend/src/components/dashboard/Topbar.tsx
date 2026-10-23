@@ -3,6 +3,7 @@ import { ArrowBigLeftDash, Info, LogOut, Table, Search as SearchIcon } from "luc
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 import { authApi } from "@/lib/api";
+import { NotificationBell } from "./NotificationBell";
 
 interface TopbarProps {
   inHomePage?: boolean;
@@ -29,7 +30,7 @@ export function Topbar({ inHomePage }: TopbarProps) {
   }, [userName]);
 
   return (
-    <div className="flex items-center justify-between bg-white rounded-2xl px-6 py-4 mb-5 md:py-6 border border-slate-200 shadow-sm">
+    <div className="flex flex-col gap-4 bg-white rounded-2xl px-4 py-4 mb-5 border border-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 md:py-6">
       <div className="flex flex-col">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Panel Comercial
@@ -39,7 +40,8 @@ export function Topbar({ inHomePage }: TopbarProps) {
         </h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="relative flex items-center justify-end gap-2 sm:gap-3">
+        <NotificationBell />
         <Button
           variant="outline"
           size="icon"

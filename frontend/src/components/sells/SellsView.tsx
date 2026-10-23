@@ -94,6 +94,17 @@ export function SellsView() {
     }
   }, [fetchData])
 
+  React.useEffect(() => {
+    const requestedId = new URLSearchParams(window.location.search).get("venta")
+    if (!requestedId || sales.length === 0) return
+    const requestedSale = sales.find((sale) => sale.id === requestedId)
+    if (requestedSale) {
+      setSelectedSell(requestedSale)
+      setIsDetailModalOpen(true)
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [sales])
+
   const filteredSells = React.useMemo(() => {
     let result = sales
 

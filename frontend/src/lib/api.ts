@@ -210,6 +210,25 @@ export const trackingApi = {
     fetchApi<{ id: number; nombre: string; username: string; etapa_orden: number }>("/trabajadores/cuentas", { method: "POST", body: JSON.stringify(data) }),
 }
 
+export interface WorkNotification {
+  venta_id: number
+  orden_omitido: number
+  detectado_en_orden: number
+  detectado_el: string
+  cliente: string
+  leido_el: string | null
+}
+
+export interface NotificationsResponse {
+  no_leidas: number
+  notificaciones: WorkNotification[]
+}
+
+export const notificationsApi = {
+  getAll: () => fetchApi<NotificationsResponse>("/notificaciones"),
+  markAllRead: () => fetchApi<null>("/notificaciones/marcar-todas-leidas", { method: "POST" }),
+}
+
 export interface Pago {
   id: number
   cliente_id: number

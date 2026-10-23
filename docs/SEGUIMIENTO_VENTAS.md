@@ -2,8 +2,8 @@
 
 ## Flujo
 
-Cada usuario con rol `trabajador` tiene una etapa fija: `0 Inicial`, `1 Imprimir`,
-`2 Planchar`, `3 Entregado`. Tras iniciar sesión, el trabajador ve únicamente
+Cada usuario con rol `trabajador` tiene una etapa fija: `1 Imprimir` o
+`2 Planchar`. Tras iniciar sesión, el trabajador ve únicamente
 `Cliente | Diseño | Estado | Fecha | Acciones` y registra **su** etapa al
 terminar. No se asigna un responsable por venta ni se muestran tiempos de
 trabajo.
@@ -13,8 +13,9 @@ se crea una alerta permanente para el jefe en `venta_etapas_omisiones`. Aunque
 la etapa anterior se registre después, la alerta conserva que se omitió en el
 momento del avance. El jefe ve el estado de producción en la columna `Proceso`:
 **Impreso** al crear la venta, **Planchado** cuando se registra Impresión y
-**Procesado** cuando se registra Planchar y **Terminado** cuando se registra Entregado. El modal de información
-muestra la línea de tiempo `Impreso → Planchado → Procesado → Terminado` y el detalle de las
+**Procesado** cuando se registra Planchar. Este es el estado final de las ventas
+nuevas. El modal de información muestra la línea de tiempo
+`Impreso → Planchado → Procesado` y el detalle de las
 etapas omitidas. `Impreso` es el estado inicial de la venta; no implica que un
 trabajador ya haya registrado la etapa de impresión.
 
@@ -22,7 +23,13 @@ La migración `0002_ventas_historicas_terminadas.sql` marca todas las ventas
 existentes en ese momento como **Terminado**, sin inventar registros de etapas.
 Esas ventas se conservan en la vista del jefe y no aparecen como pendientes a
 los trabajadores. Las ventas creadas después inician en **Impreso** y pasan a
-**Terminado** al registrar la etapa Entregado.
+**Procesado** al registrar la etapa Planchar. **Terminado** identifica solo las
+ventas históricas cerradas con la migración.
+
+La campana del jefe muestra hasta cinco alertas por Impresión omitida y permite
+verlas todas y marcarlas como leídas. El estado de lectura se guarda por jefe en
+`notificaciones_lecturas`. La migración `0003_notificaciones_lecturas.sql`
+elimina las alertas antiguas de `Inicial`, que dejó de ser una etapa registrable.
 
 ## Datos y API
 
@@ -46,6 +53,8 @@ con bases locales antiguas.
 | `GET /api/trabajador/ventas` | Trabajador | Lista reducida de ventas y estado de su etapa. |
 | `POST /api/trabajador/ventas/:id/registrar` | Trabajador | Registra solo su etapa y alertas por etapas anteriores omitidas. |
 | `GET /api/seguimiento/resumen` | Jefe | Datos de la columna `Proceso`. |
+| `GET /api/notificaciones` | Jefe | Alertas de etapas omitidas y estado de lectura del jefe actual. |
+| `POST /api/notificaciones/marcar-todas-leidas` | Jefe | Marca las alertas actuales como leídas para ese jefe. |
 
 Las cuentas de trabajadores se crean mediante el endpoint del jefe, usando el
 token devuelto por su login en el encabezado `Authorization: Bearer <token>`.

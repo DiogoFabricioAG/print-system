@@ -4,12 +4,12 @@ import { hashWorkerPassword, randomToken, readSession } from "../auth/session";
 import type { App } from "../types";
 import { errorResponse, getIdParam } from "./helpers";
 
-const ETAPAS = ["Inicial", "Imprimir", "Planchar", "Entregado"] as const;
+const ETAPAS = ["", "Imprimir", "Planchar"] as const;
 const cuentaSchema = z.object({
   nombre: z.string().trim().min(2).max(80),
   username: z.string().trim().min(3).max(40).regex(/^[a-zA-Z0-9._-]+$/),
   password: z.string().min(8).max(128),
-  etapa_orden: z.number().int().min(0).max(3),
+  etapa_orden: z.number().int().min(1).max(2),
 });
 
 export function registerSeguimientoRoutes(app: App) {
@@ -39,7 +39,7 @@ export function registerSeguimientoRoutes(app: App) {
     await ensureSchema(c.env.DB);
     const [registradas, omisiones, historicas] = await Promise.all([
       c.env.DB.prepare("SELECT venta_id, orden FROM venta_etapas_registradas ORDER BY orden").all(),
-      c.env.DB.prepare("SELECT venta_id, orden_omitido, detectado_en_orden, detectado_el FROM venta_etapas_omisiones ORDER BY detectado_el").all(),
+      c.env.DB.prepare("SELECT venta_id, orden_omitido, detectado_en_orden, detectado_el FROM venta_etapas_omisiones WHERE orden_omitido = 1 ORDER BY detectado_el").all(),
       c.env.DB.prepare("SELECT id FROM ventas WHERE produccion_historica_terminada = 1").all(),
     ]);
     const bySale: Record<number, { registradas: number[]; omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }>; historica_terminada?: boolean }> = {};
@@ -64,11 +64,11 @@ export function registerSeguimientoRoutes(app: App) {
   app.get("/api/trabajador/ventas", async (c) => {
     await ensureSchema(c.env.DB);
     const session = await readSession(c);
-    if (session?.tipo !== "trabajador" || session.etapa_orden == null) return c.json(errorResponse("Acceso de trabajador requerido"), 403);
+    if (session?.tipo !== "trabajador" || (session.etapa_orden !== 1 && session.etapa_orden !== 2)) return c.json(errorResponse("Etapa de trabajador no válida"), 403);
     const { results } = await c.env.DB.prepare(
       `SELECT v.id, c.nombre AS cliente, v."diseño" AS diseno, v.fecha, v.creado_el,
               r.registrado_el,
-              (SELECT COUNT(*) FROM venta_etapas_registradas p WHERE p.venta_id = v.id AND p.orden < ?) AS anteriores_registradas
+              (SELECT COUNT(*) FROM venta_etapas_registradas p WHERE p.venta_id = v.id AND p.orden >= 1 AND p.orden < ?) AS anteriores_registradas
        FROM ventas v JOIN clientes c ON c.id = v.cliente_id
        LEFT JOIN venta_etapas_registradas r ON r.venta_id = v.id AND r.orden = ?
        WHERE v.produccion_historica_terminada = 0
@@ -80,7 +80,7 @@ export function registerSeguimientoRoutes(app: App) {
       ventas: results.map((row) => ({
         ...row,
         estado: row.registrado_el ? "Registrado" : "Pendiente",
-        faltantes_anteriores: session.etapa_orden! - Number(row.anteriores_registradas),
+        faltantes_anteriores: session.etapa_orden! - 1 - Number(row.anteriores_registradas),
       })),
     } });
   });
@@ -88,7 +88,7 @@ export function registerSeguimientoRoutes(app: App) {
   app.post("/api/trabajador/ventas/:id/registrar", async (c) => {
     await ensureSchema(c.env.DB);
     const session = await readSession(c);
-    if (session?.tipo !== "trabajador" || session.etapa_orden == null) return c.json(errorResponse("Acceso de trabajador requerido"), 403);
+    if (session?.tipo !== "trabajador" || (session.etapa_orden !== 1 && session.etapa_orden !== 2)) return c.json(errorResponse("Etapa de trabajador no válida"), 403);
     const id = getIdParam(c.req.param("id"));
     if (!id) return c.json(errorResponse("ID de venta inválido"), 400);
     const orden = session.etapa_orden;
@@ -99,9 +99,7 @@ export function registerSeguimientoRoutes(app: App) {
       ).bind(orden, session.actor_id, id),
       c.env.DB.prepare(
         `INSERT OR IGNORE INTO venta_etapas_omisiones (venta_id, orden_omitido, detectado_en_orden)
-         SELECT ?, n.orden, ? FROM (
-           SELECT 0 AS orden UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
-         ) n WHERE n.orden < ?
+         SELECT ?, n.orden, ? FROM (SELECT 1 AS orden) n WHERE n.orden < ?
            AND EXISTS (SELECT 1 FROM venta_etapas_registradas WHERE venta_id = ? AND orden = ?)
            AND NOT EXISTS (SELECT 1 FROM venta_etapas_registradas WHERE venta_id = ? AND orden = n.orden)`,
       ).bind(id, orden, orden, id, orden, id),

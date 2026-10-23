@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatBusinessDate } from "@/lib/business-date";
 import type { ProductionSummary } from "@/lib/api";
-import { getProductionStep, PRODUCTION_STATES } from "@/lib/production-status";
+import { getProductionLabel } from "@/lib/production-status";
 
 export interface SellData {
   id: string;
@@ -106,7 +106,7 @@ export function SellsTable({
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
               <div>
                 <p className="text-xs text-slate-500">Proceso</p>
-                <p className="mt-1 text-sm font-bold text-slate-900">{sell.production ? PRODUCTION_STATES[getProductionStep(sell.production)] : "No disponible"}</p>
+                <p className="mt-1 text-sm font-bold text-slate-900">{sell.production ? getProductionLabel(sell.production) : "No disponible"}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500">Pago</p>
@@ -194,7 +194,7 @@ export function SellsTable({
                   <span className="text-xs font-semibold text-slate-700">
                     {!sell.production
                       ? "No disponible"
-                      : PRODUCTION_STATES[getProductionStep(sell.production)]}
+                      : getProductionLabel(sell.production)}
                   </span>
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
