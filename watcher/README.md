@@ -54,12 +54,85 @@ Edita `.env`:
 ```ini
 WATCH_ROOT=C:\PrintSystem\ventas
 # WATCH_FOLDER=D:\Disenos\cola   # opcional: carpeta monitoreada si es distinta de <WATCH_ROOT>\entrada
+# ADDITIONAL_WATCH_FOLDERS=E:\RecepcionPNG;F:\Trabajos\salida
+BLOCK_WEB_DOWNLOADS=true   # ignora descargas web; permite exportaciones locales
 API_URL=https://functions.diogofabricio17.workers.dev/api
 API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 SEPARATOR=" - "      # separador del nombre de archivo
 ```
 
+El bloqueo de descargas web está activado por defecto (`BLOCK_WEB_DOWNLOADS=true`).
+Si `WATCH_FOLDER` apunta a Descargas, puedes mantenerla vigilada sin registrar
+PNG descargados de Internet. El
+watcher lee `Zone.Identifier` (zonas 3 y 4) **antes de abrir la revisión, mover
+el archivo desde una carpeta adicional o enviar la venta a la API**. El PNG
+ignorado queda intacto en su carpeta. Un PNG creado localmente por CorelDRAW,
+sin esa marca, sigue el flujo normal.
+
+Esta marca identifica la procedencia web, **no el programa Chrome**: también
+puede bloquear descargas de otros navegadores. Si Windows no conserva la marca
+(por configuración, copia a un disco sin NTFS o eliminación manual), el watcher
+no puede distinguir el origen y procesará el PNG. Para inspeccionar un ejemplo
+en la máquina donde corre el watcher:
+
+```powershell
+Get-Content -LiteralPath 'C:\ruta\archivo.png' -Stream Zone.Identifier
+```
+
+Si en otra instalación necesitas procesar descargas web, configura
+`BLOCK_WEB_DOWNLOADS=false` en su `.env`.
+
 ## Mover a otra máquina
+
+### Actualizar con un botón (recomendado para equipos ya instalados)
+
+La PC del negocio necesita **Git para Windows**, el repositorio clonado y la
+tarea `PrintSystemWatcher` configurada para ejecutar `PrintSystemWatcher.exe`
+con su `.env` al lado. No necesita Python ni GitHub CLI. Una vez, en la carpeta
+del repositorio, ejecuta:
+
+```powershell
+git pull --ff-only origin main
+powershell -NoProfile -ExecutionPolicy Bypass -File .\watcher\install-update-shortcut.ps1
+```
+
+También se puede instalar con doble clic en `watcher/Instalar Actualizador.cmd`.
+Se crea **Actualizar Print System** en el escritorio. También se puede abrir
+`watcher/Actualizar Watcher.cmd` con doble clic. Ejecutarlo con la misma cuenta
+de Windows que usa el listener. Si Windows deniega modificar la tarea, usar
+esa cuenta con permisos de administrador.
+
+El botón actualiza `main` con `git pull --ff-only`, descarga el ejecutable de la
+release correspondiente al último cambio del watcher y verifica su SHA256.
+Luego pausa el supervisor, cierra el listener, reemplaza el ejecutable y vuelve
+a iniciar la misma tarea, conservando sus disparadores y configuración. Verifica
+un **heartbeat nuevo** antes de dar la actualización por terminada y reactiva el
+supervisor. Si falla el arranque, restaura y arranca el `.exe.previous`.
+
+El `.env`, la API key, carpetas vigiladas, imágenes y `state.db` se conservan.
+Los archivos descargados quedan en `watcher/.updates/`, ignorado por Git. Los
+cambios locales en archivos versionados impiden el `pull`; el actualizador no
+los sobrescribe ni hace `reset`. Si la release aún se está compilando o falla
+la descarga/verificación, la tarea instalada sigue funcionando.
+
+**Primera actualización automática:** termina cualquier revisión de venta
+abierta antes de aceptar el aviso. Las versiones que ya incluyen el protocolo
+de actualización esperan a terminar la operación actual; si tarda más de 90
+segundos, el actualizador cancela el reemplazo. Actualiza cuando no estén
+llegando nuevos archivos, porque el listener se detiene brevemente.
+
+Para nombres de tarea personalizados o verificar la descarga sin detener nada:
+
+```powershell
+.\watcher\update-watcher.ps1 -TaskName MiWatcher -HeartbeatTaskName MiSupervisor
+.\watcher\update-watcher.ps1 -CheckOnly
+```
+
+Cada `push` a `main` que cambie `watcher/` dispara **Publicar Watcher Windows**
+en GitHub Actions. Ejecuta las pruebas, compila en Windows y publica
+`PrintSystemWatcher.exe` y `watcher-release.json` con el commit y SHA256 en la
+release `watcher-<commit>`. Así, después de publicar cambios, el operador solo
+necesita pulsar el acceso directo cuando la compilación haya terminado.
 
 `.env` no se versiona: llévalo aparte (contiene la API key).
 
@@ -115,11 +188,13 @@ SEPARATOR=" - "      # separador del nombre de archivo
 
 | Flag | Descripción |
 |---|---|
-| `--once` | Procesa los PNG existentes en `entrada/` y sale |
+| `--once` | Escanea y procesa los PNG que ya existen en las carpetas monitoreadas y sale |
 | `--dry-run` | Abre la revisión y muestra en el log el payload; **no** envía nada a la API ni mueve archivos |
 | `--validate NOMBRE.png` | Valida un nombre contra la convención |
 | `--stats` | Estadísticas del estado local (SQLite) |
 | `--no-gui` | Desactiva Tkinter; todos los PNG quedan en `pendientes/` para evitar guardar sin confirmación |
+
+En modo continuo (`watcher.py` o la tarea programada), **solo procesa PNG creados o movidos a las carpetas después de iniciar el watcher**. Los que ya estaban allí se ignoran; usa `--once` si quieres procesarlos explícitamente.
 
 ## Tarea programada (Windows)
 
@@ -162,7 +237,7 @@ Puedes cambiar `-IntervalMinutes` y `-StaleMinutes` al instalarlo. El supervisor
 └── state.db      SQLite: procesados, reintentos y pendientes
 ```
 
-> `WATCH_FOLDER` (opcional) define la carpeta **monitoreada** cuando los PNG llegan a otra ruta (otro disco, carpeta de red, salida de otro programa). Si no se define, se usa `<WATCH_ROOT>\entrada`.
+> `WATCH_FOLDER` (opcional) define la carpeta **principal** monitoreada; si no se define, se usa `<WATCH_ROOT>\entrada`. `ADDITIONAL_WATCH_FOLDERS` (opcional) acepta varias rutas separadas por `;`. Los PNG nuevos de esas carpetas se mueven a la principal para centralizar el procesamiento. Si ya existe un archivo con el mismo nombre en la principal, la copia adicional va a `pendientes/` para evitar sobrescribirlo.
 
 ## Confiabilidad
 

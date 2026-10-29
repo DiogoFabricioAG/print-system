@@ -8,4 +8,6 @@ logs/
 watcher-emit-error.log
 build/
 dist/
+.updates/
+.local-backups/
 *.spec

@@ -1,0 +1,55 @@
+name: Publicar Watcher Windows
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'watcher/**'
+      - '.github/workflows/watcher-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: watcher-release-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Instalar dependencias
+        run: python -m pip install -r watcher/requirements.txt pyinstaller==6.22.3
+      - name: Verificar watcher y actualizador
+        working-directory: watcher
+        shell: powershell
+        run: |
+          python -m unittest discover -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'Pruebas Python fallaron' }
+          .\test-update.ps1
+      - name: Compilar y publicar
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          .\watcher\build-exe.ps1
+          .\watcher\test-exe-update.ps1
+          $commit = '${{ github.sha }}'
+          $tag = "watcher-$commit"
+          $exe = 'watcher/dist/PrintSystemWatcher.exe'
+          @{ commit = $commit; sha256 = (Get-FileHash $exe -Algorithm SHA256).Hash; supports_graceful_update = $true } |
+            ConvertTo-Json | Set-Content -Encoding UTF8 watcher/dist/watcher-release.json
+          $exists = $false
+          try {
+            $null = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag" -Headers @{ Authorization = "Bearer $env:GH_TOKEN" }
+            $exists = $true
+          } catch {
+            if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+          }
+          if (-not $exists) {
+            gh release create $tag --target $commit --title "Watcher $($commit.Substring(0,7))" --notes 'Ejecutable Windows y manifiesto verificado para actualización automática.'
+            if ($LASTEXITCODE -ne 0) { throw 'No se pudo crear release' }
+          }
+          gh release upload $tag $exe watcher/dist/watcher-release.json --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudieron publicar los archivos' }

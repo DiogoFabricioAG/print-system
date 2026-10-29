@@ -39,11 +39,16 @@ if (-not $PythonPath) {
 }
 
 if ($Clean) {
-    Remove-Item -Recurse -Force (Join-Path $watcherDir "build"), (Join-Path $watcherDir "dist") -ErrorAction SilentlyContinue
+    foreach ($folder in @('build', 'dist')) {
+        $target = [IO.Path]::GetFullPath((Join-Path $watcherDir $folder))
+        if ((Split-Path -Parent $target) -ne [IO.Path]::GetFullPath($watcherDir)) { throw 'Ruta de limpieza fuera del watcher' }
+        if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+    }
 }
 
 Write-Host "Instalando dependencias (requirements + pyinstaller)..."
 & $PythonPath -m pip install --disable-pip-version-check -q -r requirements.txt pyinstaller
+if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias' }
 
 Write-Host "Construyendo PrintSystemWatcher.exe (puede tardar 1-3 minutos)..."
 & $PythonPath -m PyInstaller `
@@ -57,6 +62,7 @@ Write-Host "Construyendo PrintSystemWatcher.exe (puede tardar 1-3 minutos)..."
     --hidden-import resolver_gui `
     --hidden-import watchdog.observers.winapi `
     watcher.py
+if ($LASTEXITCODE -ne 0) { throw 'La compilación del watcher falló' }
 
 $exe = Join-Path $watcherDir "dist\PrintSystemWatcher.exe"
 if (-not (Test-Path -LiteralPath $exe)) {

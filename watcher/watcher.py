@@ -42,6 +42,7 @@ from parser import (
     validate_png_extension,
 )
 from state import State
+from source_filter import is_internet_download
 
 log = logging.getLogger("watcher")
 
@@ -97,9 +98,10 @@ class SingleInstanceLock:
 
 
 class _PngEventHandler(FileSystemEventHandler):
-    def __init__(self, service: "WatcherService"):
+    def __init__(self, service: "WatcherService", stage_to_main: bool = False):
         super().__init__()
         self.service = service
+        self.stage_to_main = stage_to_main
 
     def on_created(self, event) -> None:  # type: ignore[no-untyped-def]
         if not event.is_directory:
@@ -111,7 +113,7 @@ class _PngEventHandler(FileSystemEventHandler):
 
     def _submit(self, path: str) -> None:
         if str(path).lower().endswith(".png"):
-            self.service.submit(str(path))
+            self.service.submit(str(path), stage_to_main=self.stage_to_main)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,10 +128,11 @@ class WatcherService:
         self.gui = gui
         self.state = State(cfg.db_path)
         self.api = ApiClient(cfg)
-        self.events: queue.Queue[str | None] = queue.Queue()
+        self.events: queue.Queue[tuple[str, bool] | None] = queue.Queue()
         self.counter = {"procesados": 0, "pendientes": 0, "rechazados": 0, "reintentos": 0}
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
+        self.operation_lock = threading.RLock()
 
     # ── ciclo de vida ───────────────────────────────────────────────────────
 
@@ -145,8 +148,8 @@ class WatcherService:
         for thread in self._threads:
             thread.join(timeout=5)
 
-    def submit(self, path: str) -> None:
-        self.events.put(path)
+    def submit(self, path: str, stage_to_main: bool = False) -> None:
+        self.events.put((path, stage_to_main))
 
     # ── workers ─────────────────────────────────────────────────────────────
 
@@ -155,15 +158,28 @@ class WatcherService:
             item = self.events.get()
             if item is None:
                 break
+            raw_path, stage_to_main = item
             try:
-                self.process_file(Path(item))
+                with self.operation_lock:
+                    if self._stop.is_set():
+                        break
+                    path = Path(raw_path)
+                    if stage_to_main:
+                        if not self.dry_run:
+                            staged = self._stage_external_file(path)
+                            if staged is None:
+                                continue
+                            path = staged
+                    self.process_file(path)
             except Exception:  # noqa: BLE001
-                log.exception("Error inesperado procesando %s", item)
+                log.exception("Error inesperado procesando %s", raw_path)
 
     def _retry_loop(self) -> None:
         while not self._stop.is_set():
             try:
-                self._process_due_retries()
+                with self.operation_lock:
+                    if not self._stop.is_set():
+                        self._process_due_retries()
             except Exception:  # noqa: BLE001
                 log.exception("Error en el loop de reintentos")
             self._stop.wait(5.0)
@@ -174,7 +190,21 @@ class WatcherService:
             for path in self.cfg.entrada.iterdir()
             if path.is_file() and path.suffix.lower() == ".png"
         )
-        log.info("--once: %d archivo(s) encontrados en %s", len(paths), self.cfg.entrada)
+        for folder in self.cfg.additional_watch_folders:
+            if not folder.is_dir():
+                log.warning("Carpeta adicional no existe o no está accesible: %s", folder)
+                continue
+            for source in sorted(
+                path for path in folder.iterdir() if path.is_file() and path.suffix.lower() == ".png"
+            ):
+                if self.dry_run:
+                    paths.append(source)
+                else:
+                    staged = self._stage_external_file(source)
+                    if staged is not None:
+                        paths.append(staged)
+        paths = sorted(set(paths))
+        log.info("--once: %d archivo(s) encontrados para procesar", len(paths))
         for path in paths:
             if self._stop.is_set():
                 break
@@ -186,6 +216,56 @@ class WatcherService:
             self._process_due_retries()
         except Exception:  # noqa: BLE001
             log.exception("Error procesando reintentos pendientes")
+
+    def _stage_external_file(self, path: Path) -> Path | None:
+        """Importa un PNG de una carpeta adicional a la carpeta principal vigilada."""
+        if not path.is_file():
+            return None
+
+        source_key_path = os.path.normcase(os.path.abspath(str(path)))
+        main_key_path = os.path.normcase(os.path.abspath(str(self.cfg.entrada)))
+        if os.path.normcase(os.path.dirname(source_key_path)) == main_key_path:
+            return path
+
+        if not self._wait_stable(path):
+            if path.exists():
+                self._to_pending(
+                    path,
+                    self._safe_file_key(path),
+                    "archivo de carpeta adicional no se estabilizó",
+                )
+            return None
+
+        if self._blocked_web_download(path):
+            return None
+
+        file_key = self._safe_file_key(path)
+        destination = self.cfg.entrada / path.name
+        if destination.exists():
+            existing_key = self._safe_file_key(destination)
+            if file_key and file_key == existing_key:
+                log.info("Duplicado ya presente en la carpeta principal; se retira copia: %s", path)
+                try:
+                    path.unlink()
+                except OSError as exc:
+                    log.warning("No se pudo retirar copia duplicada %s: %s", path, exc)
+                return None
+            self._to_pending(
+                path,
+                file_key,
+                f"ya existe otro archivo llamado {path.name} en {self.cfg.entrada}",
+            )
+            return None
+
+        try:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), str(destination))
+        except OSError as exc:
+            self._to_pending(path, file_key, f"no se pudo importar desde {path.parent}: {exc}")
+            return None
+
+        log.info("Importado desde carpeta adicional a la carpeta principal: %s", destination.name)
+        return destination
 
     # ── procesamiento ───────────────────────────────────────────────────────
 
@@ -202,6 +282,9 @@ class WatcherService:
                     self._safe_file_key(path),
                     "el archivo no se estabilizó (copia incompleta o inaccesible)",
                 )
+            return
+
+        if self._blocked_web_download(path):
             return
 
         try:
@@ -476,6 +559,9 @@ class WatcherService:
 
         # tipo == "venta": payload interno contiene el cuerpo API, nombre final
         # y eventual pago/adelanto posterior. Admite filas antiguas sin wrapper.
+        if path.exists() and self._blocked_web_download(path):
+            self.state.clear_retry(file_hash)
+            return
         sale_payload = payload.get("venta", payload)
         canonical_filename = payload.get("archivo_canonico", archivo)
         pago_extra = payload.get("pago_extra")
@@ -626,6 +712,12 @@ class WatcherService:
         self._to_rejected(path, f"error de API: {exc}")
 
     # ── utilidades ──────────────────────────────────────────────────────────
+
+    def _blocked_web_download(self, path: Path) -> bool:
+        if not self.cfg.block_web_downloads or not is_internet_download(path):
+            return False
+        log.info("Descarga de Internet ignorada sin registrar venta: %s", path.name)
+        return True
 
     def _wait_stable(self, path: Path) -> bool:
         deadline = time.monotonic() + self.cfg.stability_timeout
@@ -860,15 +952,45 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         observer = Observer()
-        observer.schedule(_PngEventHandler(service), str(cfg.entrada), recursive=False)
+        folders_to_watch: list[tuple[Path, bool]] = [(cfg.entrada, False)]
+        seen_folders = {os.path.normcase(os.path.abspath(str(cfg.entrada)))}
+        for folder in cfg.additional_watch_folders:
+            folder_key = os.path.normcase(os.path.abspath(str(folder)))
+            if folder_key in seen_folders:
+                continue
+            seen_folders.add(folder_key)
+            if not folder.is_dir():
+                log.warning("Carpeta adicional no existe o no está accesible: %s", folder)
+                continue
+            folders_to_watch.append((folder, True))
+
+        for folder, stage_to_main in folders_to_watch:
+            observer.schedule(
+                _PngEventHandler(service, stage_to_main=stage_to_main),
+                str(folder),
+                recursive=False,
+            )
         observer.start()
         service.start()
-        log.info("Vigilando %s (Ctrl+C para salir)", cfg.entrada)
+
+        extra_folders = [str(folder) for folder, _ in folders_to_watch[1:]]
+        log.info(
+            "Vigilando archivos nuevos en %s%s",
+            cfg.entrada,
+            f"; importando desde {', '.join(extra_folders)}" if extra_folders else "",
+        )
 
         try:
             _write_heartbeat(cfg)
             last_heartbeat = time.monotonic()
             while True:
+                if cfg.update_request_path.exists() and service.operation_lock.acquire(blocking=False):
+                    try:
+                        service._stop.set()
+                        log.info("Actualización solicitada; operación actual terminada, cerrando watcher")
+                    finally:
+                        service.operation_lock.release()
+                    break
                 if not observer.is_alive():
                     raise RuntimeError("el observer de watchdog terminó inesperadamente")
                 if not all(thread.is_alive() for thread in service._threads):
