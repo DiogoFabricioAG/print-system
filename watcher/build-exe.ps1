@@ -23,7 +23,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $watcherDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $watcherDir
+Push-Location $watcherDir
+try {
 
 if (-not $PythonPath) {
     $venvPython = Join-Path $watcherDir ".venv\Scripts\python.exe"
@@ -82,3 +83,6 @@ Write-Host "Notas:"
 Write-Host "  - El arranque de un .exe onefile tarda 1-3 segundos."
 Write-Host "  - Algunos antivirus pueden marcarlo al inicio; agrega una excepción si pasa."
 Write-Host "  - Para actualizar: reconstruye aquí y reemplaza el .exe en la máquina destino."
+} finally {
+    Pop-Location
+}
