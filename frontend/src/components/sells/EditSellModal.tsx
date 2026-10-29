@@ -21,6 +21,7 @@ interface EditSellModalProps {
   onSuccess?: (data: {
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number
@@ -42,6 +43,7 @@ export function EditSellModal({
   // Estados locales para los campos
   const [design, setDesign] = React.useState("");
   const [pago, setPago] = React.useState("");
+  const [metodoPago, setMetodoPago] = React.useState<"Yape" | "Efectivo">("Yape");
   const [cantidad, setCantidad] = React.useState("");
   const [metroTotal, setMetroTotal] = React.useState("");
   const [maquina, setMaquina] = React.useState("");
@@ -53,6 +55,7 @@ export function EditSellModal({
     if (sell) {
       setDesign(sell.design);
       setPago(String(sell.amount));
+      setMetodoPago(sell.metodo_pago ?? "Yape");
       setCantidad(sell.cantidad || "");
       setMetroTotal(sell.metro_total ? String(sell.metro_total) : "");
       setMaquina(sell.maquina || "");
@@ -73,6 +76,7 @@ export function EditSellModal({
       diseno: design,
       cliente_id: sell.clientId, // El cliente no se cambia aquí
       pago: Number(pago),
+      metodo_pago: metodoPago,
       cantidad: cantidad || undefined,
       metro_total: metroTotal ? Number(metroTotal) : undefined,
       maquina: maquina || undefined,
@@ -146,6 +150,12 @@ export function EditSellModal({
               </div>
 
               <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-3 space-y-2">
+                  <Label htmlFor="edit_metodo_pago">Método de pago</Label>
+                  <select id="edit_metodo_pago" value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as "Yape" | "Efectivo")} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">
+                    <option value="Yape">Yape</option><option value="Efectivo">Efectivo</option>
+                  </select>
+                </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="pago"

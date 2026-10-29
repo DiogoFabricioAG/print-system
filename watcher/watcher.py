@@ -304,6 +304,7 @@ class WatcherService:
             maquina=data.get("maquina", "").strip() or None,
             pago=float(data.get("pago") or 0),
             estado=data.get("estado") or "Debe",
+            metodo_pago=data.get("metodo_pago") or "Yape",
             fecha=None,
             adelanto=data.get("adelanto"),
         )
@@ -321,6 +322,7 @@ class WatcherService:
             "cliente_id": cliente["id"],
             "pago": venta.pago,
             "estado": venta.estado,
+            "metodo_pago": venta.metodo_pago,
             "nota": build_nota(path.name, file_hash),
         }
         if venta.cantidad:

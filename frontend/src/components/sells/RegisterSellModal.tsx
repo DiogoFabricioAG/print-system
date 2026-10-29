@@ -23,6 +23,7 @@ interface RegisterSellModalProps {
   onSuccess?: (data: {
     diseno: string;
     cliente_id: number;
+    metodo_pago?: "Yape" | "Efectivo";
     pago: number;
     cantidad?: string;
     metro_total?: number;
@@ -231,6 +232,7 @@ export function RegisterSellModal({
       diseno: formData.get("diseno") as string,
       cliente_id: selectedClientId,
       pago: Number(formData.get("pago")),
+      metodo_pago: (formData.get("metodo_pago") || "Yape") as "Yape" | "Efectivo",
       cantidad: (formData.get("cantidad") as string) || undefined,
       metro_total: formData.get("metro_total") ? Number(formData.get("metro_total")) : undefined,
       maquina: (formData.get("maquina") as string) || undefined,
@@ -433,6 +435,10 @@ export function RegisterSellModal({
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 <div className="space-y-1 sm:space-y-1.5">
+                  <Label htmlFor="metodo_pago" className="text-slate-700 font-semibold text-xs sm:text-sm">Método de pago</Label>
+                  <select id="metodo_pago" name="metodo_pago" defaultValue="Yape" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">
+                    <option value="Yape">Yape</option><option value="Efectivo">Efectivo</option>
+                  </select>
                   <Label htmlFor="pago" className="text-slate-700 font-semibold text-xs sm:text-sm">Costo Total (S/)</Label>
                   <Input id="pago" name="pago" type="number" step="0.01" placeholder="0.00" required className="rounded-xl border-slate-200 focus-visible:ring-[#30b7ff] h-9 sm:h-10 text-sm" />
                 </div>

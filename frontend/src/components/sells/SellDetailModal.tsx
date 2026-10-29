@@ -102,6 +102,10 @@ export function SellDetailModal({
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 md:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Método de pago</p>
+              <p className="mt-1 font-semibold text-slate-800">{sell.metodo_pago ?? "Yape"}</p>
+            </div>
             {/* Cliente */}
             <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex gap-3 sm:gap-4">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">

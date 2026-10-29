@@ -47,6 +47,7 @@ export interface Sale {
   cantidad: string
   metro_total: number
   maquina: string
+  metodo_pago?: "Yape" | "Efectivo"
   pago: number
   estado: string
   nota: string
@@ -152,6 +153,7 @@ export const salesApi = {
   create: (data: {
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number
@@ -167,6 +169,7 @@ export const salesApi = {
   update: (id: number, data: {
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number

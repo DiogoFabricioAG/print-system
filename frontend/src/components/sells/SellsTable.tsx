@@ -19,6 +19,7 @@ export interface SellData {
   client: string;
   clientId: number;
   amount: number;
+  metodo_pago?: "Yape" | "Efectivo";
   status: string;
   date: string;
   nota?: string;
@@ -111,6 +112,7 @@ export function SellsTable({
               <div>
                 <p className="text-xs text-slate-500">Pago</p>
                 <p className="mt-1 text-sm font-bold tabular-nums text-slate-900">S/ {sell.amount.toLocaleString("es-PE")}</p>
+                <p className="mt-1 text-xs text-slate-600">{sell.metodo_pago ?? "Yape"}</p>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
@@ -182,6 +184,7 @@ export function SellsTable({
                 </TableCell>
                 <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
                   S/ {sell.amount.toLocaleString("es-PE")}
+                  <span className="mt-1 block text-xs font-normal text-slate-500">{sell.metodo_pago ?? "Yape"}</span>
                 </TableCell>
                 <TableCell className="py-4 px-6">
                   <span

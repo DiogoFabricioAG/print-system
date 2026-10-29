@@ -11,6 +11,7 @@ const ventaCreateSchema = z.object({
     metro_total: z.number().nullable().optional(),
     maquina: z.string().nullable().optional(),
     pago: z.number(),
+    metodo_pago: z.enum(["Yape", "Efectivo"]).optional(),
     estado: z.string().nullable().optional(),
     nota: z.string().nullable().optional(),
     fecha: z.string().nullable().optional(),
@@ -24,6 +25,7 @@ interface SaleSheetRecord {
     metro_total: number | null;
     maquina: string | null;
     pago: number;
+    metodo_pago: "Yape" | "Efectivo";
     estado: string | null;
     nota: string | null;
     creado_el: string;
@@ -43,6 +45,7 @@ export function registerVentasRoutes(app: App) {
 				v.metro_total,
 				v.maquina,
 				v.pago,
+                v.metodo_pago,
 				v.estado,
 				v.nota,
 				v.creado_el,
@@ -73,6 +76,7 @@ export function registerVentasRoutes(app: App) {
 				v.metro_total,
 				v.maquina,
 				v.pago,
+                v.metodo_pago,
 				v.estado,
 				v.nota,
 				v.creado_el,
@@ -117,7 +121,26 @@ export function registerVentasRoutes(app: App) {
         if (payload.fecha) {
             insert = await c.env.DB.prepare(
                 `INSERT INTO ventas
-                ("diseño", cliente_id, cantidad, metro_total, maquina, pago, estado, nota, fecha)
+                ("diseño", cliente_id, cantidad, metro_total, maquina, pago, estado, nota, fecha, metodo_pago)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+                .bind(
+                    payload.diseno,
+                    payload.cliente_id,
+                    payload.cantidad ?? null,
+                    payload.metro_total ?? null,
+                    payload.maquina ?? null,
+                    payload.pago,
+                    payload.estado ?? null,
+                    payload.nota ?? null,
+                    payload.fecha,
+                    payload.metodo_pago ?? "Yape"
+                )
+                .run();
+        } else {
+            insert = await c.env.DB.prepare(
+                `INSERT INTO ventas
+                ("diseño", cliente_id, cantidad, metro_total, maquina, pago, estado, nota, metodo_pago)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
                 .bind(
@@ -129,24 +152,7 @@ export function registerVentasRoutes(app: App) {
                     payload.pago,
                     payload.estado ?? null,
                     payload.nota ?? null,
-                    payload.fecha
-                )
-                .run();
-        } else {
-            insert = await c.env.DB.prepare(
-                `INSERT INTO ventas
-                ("diseño", cliente_id, cantidad, metro_total, maquina, pago, estado, nota)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-            )
-                .bind(
-                    payload.diseno,
-                    payload.cliente_id,
-                    payload.cantidad ?? null,
-                    payload.metro_total ?? null,
-                    payload.maquina ?? null,
-                    payload.pago,
-                    payload.estado ?? null,
-                    payload.nota ?? null
+                    payload.metodo_pago ?? "Yape"
                 )
                 .run();
         }
@@ -161,6 +167,7 @@ export function registerVentasRoutes(app: App) {
 				v.metro_total,
 				v.maquina,
 				v.pago,
+                v.metodo_pago,
 				v.estado,
 				v.nota,
 				v.creado_el,
@@ -224,7 +231,7 @@ export function registerVentasRoutes(app: App) {
         if (payload.fecha !== undefined) {
              result = await c.env.DB.prepare(
                 `UPDATE ventas
-                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, fecha = ?
+                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago), fecha = ?
                 WHERE id = ?`
             )
                 .bind(
@@ -236,6 +243,7 @@ export function registerVentasRoutes(app: App) {
                     payload.pago,
                     payload.estado ?? null,
                     payload.nota ?? null,
+                    payload.metodo_pago ?? null,
                     payload.fecha ?? null,
                     id
                 )
@@ -243,7 +251,7 @@ export function registerVentasRoutes(app: App) {
         } else {
              result = await c.env.DB.prepare(
                 `UPDATE ventas
-                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?
+                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago)
                 WHERE id = ?`
             )
                 .bind(
@@ -255,6 +263,7 @@ export function registerVentasRoutes(app: App) {
                     payload.pago,
                     payload.estado ?? null,
                     payload.nota ?? null,
+                    payload.metodo_pago ?? null,
                     id
                 )
                 .run();
@@ -274,6 +283,7 @@ export function registerVentasRoutes(app: App) {
 				v.metro_total,
 				v.maquina,
 				v.pago,
+                v.metodo_pago,
 				v.estado,
 				v.nota,
 				v.creado_el,
@@ -315,7 +325,8 @@ export function registerVentasRoutes(app: App) {
         }
 
         const venta = await c.env.DB.prepare(
-            "SELECT v.id, v.\"diseño\" AS diseno, v.cliente_id, v.cantidad, v.metro_total, v.maquina, v.pago, v.estado, v.nota, v.creado_el, v.fecha, c.nombre AS cliente_nombre FROM ventas v LEFT JOIN clientes c ON c.id = v.cliente_id WHERE v.id = ?",
+            `SELECT v.id, v."diseño" AS diseno, v.cliente_id, v.cantidad, v.metro_total, v.maquina, v.pago,
+                v.metodo_pago, v.estado, v.nota, v.creado_el, v.fecha, c.nombre AS cliente_nombre FROM ventas v LEFT JOIN clientes c ON c.id = v.cliente_id WHERE v.id = ?`,
         )
             .bind(id)
             .first<SaleSheetRecord>();

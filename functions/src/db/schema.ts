@@ -130,6 +130,12 @@ export async function ensureSchema(db: D1Database) {
     await db.exec(`INSERT OR IGNORE INTO variables_negocio (clave, valor) VALUES ('costo_venta_porcentaje', '50');`);
 
     // Add costo_por_metro to ventas if it doesn't exist
+    const ventaColumns = await columnsOf(db, "ventas");
+    if (!ventaColumns.has("metodo_pago")) {
+        await db.exec(`ALTER TABLE ventas ADD COLUMN metodo_pago TEXT NOT NULL DEFAULT 'Yape' CHECK (metodo_pago IN ('Yape', 'Efectivo'));`);
+    }
+
+    // Add costo_por_metro to ventas if it doesn't exist
     try { await db.exec(`ALTER TABLE ventas ADD COLUMN costo_por_metro DOUBLE;`); } catch (_) {}
 
     // Add fecha to ventas if it doesn't exist (bases creadas antes de la columna)

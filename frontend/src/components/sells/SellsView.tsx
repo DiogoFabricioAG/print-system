@@ -24,6 +24,7 @@ function mapSaleToViewModel(sale: Sale, production?: ProductionSummary): SellDat
     client: sale.cliente_nombre,
     clientId: sale.cliente_id,
     amount: sale.pago,
+    metodo_pago: sale.metodo_pago ?? "Yape",
     status: sale.estado,
     date: getBusinessDateKey(sale.fecha) ?? getBusinessDateKey(sale.creado_el) ?? "",
     nota: sale.nota,
@@ -53,6 +54,7 @@ export function SellsView() {
   const [pendingSellData, setPendingSellData] = React.useState<{
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number
@@ -183,6 +185,7 @@ export function SellsView() {
   const handleRegisterClick = (data: {
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number
@@ -200,6 +203,7 @@ export function SellsView() {
   const handleEditClick = (data: {
     diseno: string
     cliente_id: number
+    metodo_pago?: "Yape" | "Efectivo"
     pago: number
     cantidad?: string
     metro_total?: number

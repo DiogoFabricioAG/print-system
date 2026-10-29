@@ -569,6 +569,7 @@ class ResolverGUI:
         # ── formulario (solo kind=form) ──
         form_widgets: dict = {}
         estado_var = None
+        metodo_pago_var = None
         adelanto_entry = None
         if is_form:
             fields_card = tk.Frame(
@@ -605,6 +606,13 @@ class ResolverGUI:
                 font=FONT_BODY,
             )
             estado_combo.grid(row=5, column=1, sticky="we", pady=4)
+
+            tk.Label(fields_card, text="Método de pago", font=FONT_SMALL, bg=C["card"],
+                     fg=C["muted"], anchor="e").grid(row=7, column=0, sticky="e", padx=(0, 10), pady=4)
+            metodo_pago_var = tk.StringVar(value=(payload.get("prefill") or {}).get("metodo_pago", "Yape"))
+            self._ttk.Combobox(fields_card, textvariable=metodo_pago_var,
+                               values=("Yape", "Efectivo"), state="readonly", font=FONT_BODY).grid(
+                                   row=7, column=1, sticky="we", pady=4)
 
             adelanto_label = tk.Label(
                 fields_card,
@@ -935,6 +943,7 @@ class ResolverGUI:
                 "maquina": maquina,
                 "pago": pago,
                 "estado": estado,
+                "metodo_pago": metodo_pago_var.get(),
                 "adelanto": adelanto,
             }
             client_name = (selected or nuevo).get("nombre", "")

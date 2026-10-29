@@ -55,6 +55,7 @@ class ParsedVenta:
     estado: str
     fecha: str | None
     adelanto: float | None = None
+    metodo_pago: str = "Yape"
 
     def to_dict(self) -> dict:
         return {
@@ -65,6 +66,7 @@ class ParsedVenta:
             "maquina": self.maquina,
             "pago": self.pago,
             "estado": self.estado,
+            "metodo_pago": self.metodo_pago,
             "fecha": self.fecha,
             "adelanto": self.adelanto,
         }
