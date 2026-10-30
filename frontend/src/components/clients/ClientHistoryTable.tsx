@@ -100,8 +100,9 @@ export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment }: {
   return (
     <>
       <p id="amount-range-help" className="border-b border-slate-100 px-6 py-3 text-sm text-slate-600">
-        <span className="hidden sm:inline">Arrastra sobre los importes o usa Mayús + clic para sumar un rango.</span>
-        <span className="sm:hidden">Para sumar un rango, toca el primer importe y luego el último.</span>
+        <span className="hidden sm:inline">Arrastra sobre los importes o usa Mayús + clic para seleccionar un rango.</span>
+        <span className="sm:hidden">Toca el primer importe y luego el último para seleccionar un rango.</span>
+        <span className="block mt-1 text-xs">Al seleccionar ambas columnas, los pagos se restan de la deuda.</span>
       </p>
       <Table ref={tableRef} className={range ? "mb-36 md:mb-24" : ""}>
         <TableHeader>
@@ -135,7 +136,7 @@ export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment }: {
         <div className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-2xl border border-sky-200 bg-white px-4 py-3 shadow-xl md:bottom-5">
           <div role="status" aria-live="polite" aria-atomic="true" className="min-w-0">
             <p className="text-xs font-medium text-slate-500">Filas {Math.min(range.anchor.row, range.end.row) + 1}–{Math.max(range.anchor.row, range.end.row) + 1} · {sum.count} montos</p>
-            <p className="mt-1 text-base font-bold tabular-nums text-slate-900 sm:text-lg">Suma seleccionada: <span data-range-total>{money(sum.total)}</span></p>
+            <p className="mt-1 text-base font-bold tabular-nums text-slate-900 sm:text-lg">{range.anchor.column !== range.end.column ? "Saldo seleccionado (Deuda − Pago)" : range.anchor.column === "deuda" ? "Suma de deudas" : "Suma de pagos"}: <span data-range-total>{money(sum.total)}</span></p>
             {range.anchor.column !== range.end.column && <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tabular-nums"><span className="text-rose-600">Deuda: {money(sum.deuda)}</span><span className="text-emerald-600">Pago: {money(sum.pago)}</span></p>}
           </div>
           <button type="button" onClick={clear} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Limpiar selección" title="Limpiar selección"><X className="h-5 w-5" /></button>

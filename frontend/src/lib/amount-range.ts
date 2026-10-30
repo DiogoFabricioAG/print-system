@@ -24,5 +24,7 @@ export function sumAmountRange(rows: Array<{ deuda: number; pago: number }>, ran
       }
     });
   });
-  return { deuda: cents.deuda / 100, pago: cents.pago / 100, total: (cents.deuda + cents.pago) / 100, count };
+  const mixedColumns = range.anchor.column !== range.end.column;
+  const totalCents = mixedColumns ? cents.deuda - cents.pago : cents.deuda + cents.pago;
+  return { deuda: cents.deuda / 100, pago: cents.pago / 100, total: totalCents / 100, count };
 }

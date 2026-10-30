@@ -7,10 +7,19 @@ test("suma un rango inclusivo en una columna con céntimos exactos", () => {
   assert.deepEqual(sumAmountRange(rows, { anchor: { row: 0, column: "deuda" }, end: { row: 2, column: "deuda" } }),
     { deuda: 100.3, pago: 0, total: 100.3, count: 2 });
 });
-test("permite selección inversa y rectangular en ambas columnas", () => {
+test("resta pagos de deudas en una selección inversa y rectangular", () => {
   const range = { anchor: { row: 3, column: "pago" }, end: { row: 1, column: "deuda" } };
-  assert.deepEqual(sumAmountRange(rows, range), { deuda: 0.2, pago: 30.3, total: 30.5, count: 3 });
+  assert.deepEqual(sumAmountRange(rows, range), { deuda: 0.2, pago: 30.3, total: -30.1, count: 3 });
   assert.equal(containsAmountCell(range, { row: 0, column: "pago" }), false);
+});
+test("una selección solo de pagos conserva su suma positiva", () => {
+  assert.deepEqual(sumAmountRange(rows, { anchor: { row: 1, column: "pago" }, end: { row: 3, column: "pago" } }),
+    { deuda: 0, pago: 30.3, total: 30.3, count: 2 });
+});
+test("calcula deuda menos pago con céntimos exactos y conserva saldo cero", () => {
+  const range = { anchor: { row: 0, column: "deuda" }, end: { row: 1, column: "pago" } };
+  assert.equal(sumAmountRange(rows, range).total, 79.9);
+  assert.equal(sumAmountRange([{ deuda: 10.1, pago: 0 }, { deuda: 0, pago: 10.1 }], range).total, 0);
 });
 test("una celda vacía no suma ni cuenta como importe", () => {
   assert.deepEqual(sumAmountRange(rows, { anchor: { row: 0, column: "pago" }, end: { row: 0, column: "pago" } }),
