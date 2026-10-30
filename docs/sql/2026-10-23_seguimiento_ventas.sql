@@ -30,13 +30,3 @@ CREATE TABLE IF NOT EXISTS venta_etapas_omisiones (
   PRIMARY KEY (venta_id, orden_omitido),
   FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS notificaciones_lecturas (
-  usuario_id INTEGER NOT NULL,
-  venta_id INTEGER NOT NULL,
-  orden_omitido INTEGER NOT NULL,
-  leido_el TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (usuario_id, venta_id, orden_omitido),
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-  FOREIGN KEY (venta_id, orden_omitido) REFERENCES venta_etapas_omisiones(venta_id, orden_omitido) ON DELETE CASCADE
-);

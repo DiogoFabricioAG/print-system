@@ -26,10 +26,11 @@ los trabajadores. Las ventas creadas después inician en **Impreso** y pasan a
 **Procesado** al registrar la etapa Planchar. **Terminado** identifica solo las
 ventas históricas cerradas con la migración.
 
-La campana del jefe muestra hasta cinco alertas por Impresión omitida y permite
-verlas todas y marcarlas como leídas. El estado de lectura se guarda por jefe en
-`notificaciones_lecturas`. La migración `0003_notificaciones_lecturas.sql`
-elimina las alertas antiguas de `Inicial`, que dejó de ser una etapa registrable.
+El administrador consulta las etapas omitidas dentro de Información de cada
+venta. El centro de notificaciones, su campana y sus endpoints fueron retirados.
+La migración histórica `0003_notificaciones_lecturas.sql` se conserva para
+mantener la secuencia de migraciones; los datos de lectura existentes quedan
+sin uso. El Worker ya no crea esa tabla durante la inicialización.
 
 ## Datos y API
 
@@ -53,8 +54,6 @@ con bases locales antiguas.
 | `GET /api/trabajador/ventas` | Trabajador | Lista reducida de ventas y estado de su etapa. |
 | `POST /api/trabajador/ventas/:id/registrar` | Trabajador | Registra solo su etapa y alertas por etapas anteriores omitidas. |
 | `GET /api/seguimiento/resumen` | Jefe | Datos de la columna `Proceso`. |
-| `GET /api/notificaciones` | Jefe | Alertas de etapas omitidas y estado de lectura del jefe actual. |
-| `POST /api/notificaciones/marcar-todas-leidas` | Jefe | Marca las alertas actuales como leídas para ese jefe. |
 
 Las cuentas de trabajadores se crean mediante el endpoint del jefe, usando el
 token devuelto por su login en el encabezado `Authorization: Bearer <token>`.

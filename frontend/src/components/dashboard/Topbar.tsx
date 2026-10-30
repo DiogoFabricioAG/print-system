@@ -3,7 +3,6 @@ import { ArrowBigLeftDash, Info, LogOut, Table, Search as SearchIcon } from "luc
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 import { authApi } from "@/lib/api";
-import { NotificationBell } from "./NotificationBell";
 
 interface TopbarProps {
   inHomePage?: boolean;
@@ -41,7 +40,6 @@ export function Topbar({ inHomePage }: TopbarProps) {
       </div>
 
       <div className="relative flex items-center justify-end gap-2 sm:gap-3">
-        <NotificationBell />
         <Button
           variant="outline"
           size="icon"
