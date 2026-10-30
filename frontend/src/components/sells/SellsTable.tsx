@@ -131,28 +131,28 @@ export function SellsTable({
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Cliente
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Diseño
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Metro
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Pago
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Estado
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Proceso
               </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Fecha
               </TableHead>
-              <TableHead className="text-right font-semibold text-slate-700 py-4 px-6">
+              <TableHead className="text-right font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Acciones
               </TableHead>
             </TableRow>
@@ -167,43 +167,43 @@ export function SellsTable({
                     : ""
                 }`}
               >
-                <TableCell className="font-medium text-slate-900 py-4 px-6">
+                <TableCell className="max-w-[180px] truncate font-medium text-slate-900 py-4 px-3 xl:px-6 xl:max-w-[240px]">
                   <a
                     href={`/clientes/detalle?id=${sell.clientId}`}
-                    className="hover:text-sky-700 transition-colors underline-offset-4 hover:underline"
-                    title="Ver perfil del cliente"
+                    className="block truncate hover:text-sky-700 transition-colors underline-offset-4 hover:underline"
+                    title={`${sell.client} ? Ver perfil del cliente`}
                   >
                     {sell.client}
                   </a>
                 </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
+                <TableCell className="text-slate-600 py-4 px-3 xl:px-6 max-w-[200px] truncate xl:max-w-[250px]">
                   {sell.design}
                 </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6 tabular-nums whitespace-nowrap">
+                <TableCell className="text-slate-600 py-4 px-3 xl:px-6 tabular-nums whitespace-nowrap">
                   {sell.metro_total != null ? `${sell.metro_total} m` : "-"}
                 </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6 tabular-nums font-medium">
+                <TableCell className="text-slate-600 py-4 px-3 xl:px-6 tabular-nums font-medium">
                   S/ {sell.amount.toLocaleString("es-PE")}
                   <span className="mt-1 block text-xs font-normal text-slate-500">{sell.metodo_pago ?? "Yape"}</span>
                 </TableCell>
-                <TableCell className="py-4 px-6">
+                <TableCell className="py-4 px-3 xl:px-6">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusBadge(sell.status)}`}
                   >
                     {sell.status}
                   </span>
                 </TableCell>
-                <TableCell className="py-4 px-6">
+                <TableCell className="py-4 px-3 xl:px-6">
                   <span className="text-xs font-semibold text-slate-700">
                     {!sell.production
                       ? "No disponible"
                       : getProductionLabel(sell.production)}
                   </span>
                 </TableCell>
-                <TableCell className="text-slate-600 py-4 px-6 max-w-[250px] truncate">
+                <TableCell className="text-slate-600 py-4 px-3 xl:px-6 max-w-[200px] truncate xl:max-w-[250px]">
                   {formatBusinessDate(sell.date)}
                 </TableCell>
-                <TableCell className="text-right py-4 px-6">
+                <TableCell className="text-right py-4 px-3 xl:px-6">
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
