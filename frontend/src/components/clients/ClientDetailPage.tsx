@@ -13,21 +13,12 @@ import {
   ArrowLeft,
   PlusCircle,
   Loader2,
-  Pencil,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clientsApi, pagosApi, type ClientDetail } from "@/lib/api";
 import { showToast } from "@/lib/toast";
 import { formatBusinessDate, getLimaDateKey } from "@/lib/business-date";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ClientHistoryTable } from "./ClientHistoryTable";
 import {
   Dialog,
   DialogContent,
@@ -410,95 +401,16 @@ export function ClientDetailPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-slate-100">
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Fecha
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Descripción
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Deuda
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4">
-                    Pago
-                  </TableHead>
-                  <TableHead className="font-semibold text-slate-700 px-6 py-4 w-20">
-                    Acciones
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {client.historial.map((item, index) => (
-                  <TableRow
-                    key={`${item.tipo}-${item.id}-${index}`}
-                    className="border-slate-50 hover:bg-slate-50/80 transition-colors group"
-                  >
-                    <TableCell className="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">
-                      {formatDate(item.fecha)}
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex w-2 h-2 rounded-full ${item.tipo === "venta" ? "bg-rose-400" : "bg-emerald-400"}`}
-                        />
-                        <span className="text-sm font-medium text-slate-800">
-                          {item.descripcion}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm font-bold tabular-nums text-rose-600">
-                      {item.deuda > 0
-                        ? `S/ ${item.deuda.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm font-bold tabular-nums text-emerald-600">
-                      {item.pago > 0
-                        ? `S/ ${item.pago.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      {item.tipo === "pago" && (
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                            onClick={() =>
-                              setEditingPago({
-                                id: item.id,
-                                pago: item.pago,
-                                nota:
-                                  item.descripcion === "Abono"
-                                    ? ""
-                                    : item.descripcion,
-                                fecha: item.fecha,
-                              })
-                            }
-                            title="Editar pago"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                            onClick={() => setDeletingPagoId(item.id)}
-                            title="Eliminar pago"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ClientHistoryTable
+            rows={client.historial}
+            onEditPayment={(item) => setEditingPago({
+              id: item.id,
+              pago: item.pago,
+              nota: item.descripcion === "Abono" ? "" : item.descripcion,
+              fecha: item.fecha,
+            })}
+            onDeletePayment={setDeletingPagoId}
+          />
         )}
       </div>
 
