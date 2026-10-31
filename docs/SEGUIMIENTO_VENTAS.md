@@ -4,7 +4,7 @@ La aplicaci?n de trabajos se separ? de Print System en un repositorio y
 un despliegue independientes:
 
 - Repositorio: https://github.com/DiogoFabricioAG/work-system
-- Aplicaci?n: https://gestion-trabajos.diogofabricio17.workers.dev
+- Aplicaci?n: https://task-system.diogoabregu.tech
 
 Print System mantiene clientes, ventas, importes, m?todos de pago y el listener.
 Work System consulta ventas y registra las etapas de producci?n, con vistas

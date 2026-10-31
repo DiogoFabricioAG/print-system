@@ -43,7 +43,7 @@ export function registerAuthRoutes(app: App) {
 			return c.json(errorResponse("Usuario o contraseña incorrectos"), 401);
 		}
 		if (usuario.rol !== "jefe") {
-			return c.json(errorResponse("Ingresa desde el sistema de trabajos: https://gestion-trabajos.diogofabricio17.workers.dev"), 403);
+			return c.json(errorResponse("Ingresa desde el sistema de trabajos: https://task-system.diogoabregu.tech"), 403);
 		}
 		if (usuario.password_alg === "sha256") {
 			const salt = randomToken();

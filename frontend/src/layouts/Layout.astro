@@ -45,7 +45,7 @@ const navItems = [
 				try { session = user ? JSON.parse(user) : null; } catch { localStorage.removeItem('printsystem_user'); }
 				if (session?.rol === 'trabajador') {
                     localStorage.removeItem('printsystem_user');
-                    window.location.replace('https://gestion-trabajos.diogofabricio17.workers.dev/login');
+                    window.location.replace('https://task-system.diogoabregu.tech/login');
                     return;
                 }
                 if (!session?.token || session.rol !== 'jefe') {
