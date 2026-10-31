@@ -49,6 +49,7 @@ import { Button } from "@/components/ui/button";
               Ingresar
             </Button>
           </form>
+          <a href="https://gestion-trabajos.diogofabricio17.workers.dev/login" class="mt-5 block text-center text-sm font-medium text-sky-700 underline underline-offset-4">Acceso al sistema de trabajos</a>
         </CardContent>
       </Card>
     </div>
@@ -77,7 +78,7 @@ import { Button } from "@/components/ui/button";
       try {
         const user = await authApi.login(username, password);
         setUser(user);
-        window.location.href = user.rol === 'trabajador' ? '/trabajador/ventas' : '/';
+        window.location.href = '/';
       } catch (error: any) {
         if (errorMsg) {
           errorMsg.textContent = error.message || 'Usuario o contraseña incorrectos';

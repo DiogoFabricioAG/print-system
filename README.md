@@ -2,6 +2,11 @@
 
 Aplicación web para registrar clientes y ventas, conectada a Google Sheets.
 
+El seguimiento de producción vive en el repositorio independiente
+[Work System](https://github.com/DiogoFabricioAG/work-system), disponible en
+https://gestion-trabajos.diogofabricio17.workers.dev. Ambos sistemas comparten
+D1 y cuentas; cada aplicación tiene sus propias sesiones y responsabilidades.
+
 Cuando se registra una venta:
 
 - Si el cliente existe, la venta se guarda en una hoja de Google Sheets para ese cliente.

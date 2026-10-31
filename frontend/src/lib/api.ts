@@ -26,8 +26,7 @@ export interface User {
   id: number
   username: string
   nombre?: string
-  rol: "jefe" | "trabajador"
-  etapa_orden?: number
+  rol: "jefe"
   token: string
 }
 
@@ -186,31 +185,6 @@ export const salesApi = {
     fetchApi<{ success: boolean }>(`/ventas/${id}`, {
       method: "DELETE",
     }),
-}
-
-export interface ProductionSummary {
-  registradas: number[]
-  omisiones: Array<{ etapa: string; detectada_al_registrar: string; fecha: string }>
-  historica_terminada?: boolean
-}
-
-export interface WorkerSale {
-  id: number
-  cliente: string
-  diseno: string
-  fecha: string | null
-  creado_el: string
-  registrado_el: string | null
-  estado: "Pendiente" | "Registrado"
-  faltantes_anteriores: number
-}
-
-export const trackingApi = {
-  getSummary: () => fetchApi<Record<number, ProductionSummary>>("/seguimiento/resumen"),
-  getWorkerSales: () => fetchApi<{ etapa: string; etapa_orden: number; ventas: WorkerSale[] }>("/trabajador/ventas"),
-  markStage: (id: number) => fetchApi<{ venta_id: number; etapa: string }>(`/trabajador/ventas/${id}/registrar`, { method: "POST" }),
-  createWorkerAccount: (data: { nombre: string; username: string; password: string; etapa_orden: number }) =>
-    fetchApi<{ id: number; nombre: string; username: string; etapa_orden: number }>("/trabajadores/cuentas", { method: "POST", body: JSON.stringify(data) }),
 }
 
 export interface Pago {

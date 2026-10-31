@@ -14,7 +14,6 @@ const { title, showSidebar = true, wideContent = false } = Astro.props;
 const currentPath = Astro.url.pathname;
 const showAppNav = showSidebar;
 const isLoginPage = currentPath === '/login';
-const isWorkerPage = currentPath.startsWith('/trabajador');
 
 const navItems = [
 	{ name: 'Dashboard', path: '/', short: 'Inicio' },
@@ -44,18 +43,17 @@ const navItems = [
 				}
 				let session = null;
 				try { session = user ? JSON.parse(user) : null; } catch { localStorage.removeItem('printsystem_user'); }
-				if (!session?.token || !['jefe', 'trabajador'].includes(session.rol)) {
-					localStorage.removeItem('printsystem_user');
-					if (!isLoginPage) window.location.replace('/login');
-					return;
-				}
-				if (isLoginPage) {
-					window.location.replace(session.rol === 'trabajador' ? '/trabajador/ventas' : '/');
-				} else if (session.rol === 'trabajador' && !path.startsWith('/trabajador')) {
-					window.location.replace('/trabajador/ventas');
-				} else if (session.rol === 'jefe' && path.startsWith('/trabajador')) {
-					window.location.replace('/ventas');
-				}
+				if (session?.rol === 'trabajador') {
+                    localStorage.removeItem('printsystem_user');
+                    window.location.replace('https://gestion-trabajos.diogofabricio17.workers.dev/login');
+                    return;
+                }
+                if (!session?.token || session.rol !== 'jefe') {
+                    localStorage.removeItem('printsystem_user');
+                    if (!isLoginPage) window.location.replace('/login');
+                    return;
+                }
+                if (isLoginPage) window.location.replace('/');
 			}
 			
 			// Check on page load
@@ -122,7 +120,7 @@ const navItems = [
 					</header>
 				)}
 
-				<section class={`mx-auto w-full ${isWorkerPage ? 'max-w-none p-0' : showAppNav ? 'max-w-7xl px-4 pb-24 pt-6 md:px-8 md:pb-8' : wideContent ? 'max-w-[1440px] px-4 py-8 md:px-8 md:py-12' : 'max-w-6xl px-4 py-8 md:py-12'}`}>
+				<section class={`mx-auto w-full ${showAppNav ? 'max-w-7xl px-4 pb-24 pt-6 md:px-8 md:pb-8' : wideContent ? 'max-w-[1440px] px-4 py-8 md:px-8 md:py-12' : 'max-w-6xl px-4 py-8 md:py-12'}`}>
 					<slot />
 				</section>
 			</main>

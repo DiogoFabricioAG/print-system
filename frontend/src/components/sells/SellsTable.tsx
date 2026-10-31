@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatBusinessDate } from "@/lib/business-date";
-import type { ProductionSummary } from "@/lib/api";
-import { getProductionLabel } from "@/lib/production-status";
 
 export interface SellData {
   id: string;
@@ -26,7 +24,6 @@ export interface SellData {
   cantidad?: string;
   metro_total?: number;
   maquina?: string;
-  production?: ProductionSummary;
 }
 
 interface SellsTableProps {
@@ -104,11 +101,7 @@ export function SellsTable({
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Diseño</p>
               <p className="mt-1 break-words text-sm leading-6 text-slate-800">{sell.design}</p>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3">
-              <div>
-                <p className="text-xs text-slate-500">Proceso</p>
-                <p className="mt-1 text-sm font-bold text-slate-900">{sell.production ? getProductionLabel(sell.production) : "No disponible"}</p>
-              </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl bg-slate-50 p-3">
               <div>
                 <p className="text-xs text-slate-500">Pago</p>
                 <p className="mt-1 text-sm font-bold tabular-nums text-slate-900">S/ {sell.amount.toLocaleString("es-PE")}</p>
@@ -145,9 +138,6 @@ export function SellsTable({
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Estado
-              </TableHead>
-              <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
-                Proceso
               </TableHead>
               <TableHead className="font-semibold text-slate-700 py-4 px-3 xl:px-6">
                 Fecha
@@ -193,13 +183,6 @@ export function SellsTable({
                     {sell.status}
                   </span>
                 </TableCell>
-                <TableCell className="py-4 px-3 xl:px-6">
-                  <span className="text-xs font-semibold text-slate-700">
-                    {!sell.production
-                      ? "No disponible"
-                      : getProductionLabel(sell.production)}
-                  </span>
-                </TableCell>
                 <TableCell className="text-slate-600 py-4 px-3 xl:px-6 max-w-[200px] truncate xl:max-w-[250px]">
                   {formatBusinessDate(sell.date)}
                 </TableCell>
@@ -241,7 +224,7 @@ export function SellsTable({
             {sells.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="h-32 text-center text-slate-500"
                 >
                   No se encontraron ventas.

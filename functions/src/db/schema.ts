@@ -39,7 +39,7 @@ async function ensureUserSchema(db: D1Database) {
     await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS usuarios_username_nocase ON usuarios(username COLLATE NOCASE);");
 }
 
-async function ensureTrackingSchema(db: D1Database) {
+async function ensureSessionSchema(db: D1Database) {
     const legacyWorkers = await hasTable(db, "trabajador_cuentas");
     if (legacyWorkers) {
         const collision = await db.prepare(`SELECT w.username FROM trabajador_cuentas w
@@ -91,17 +91,6 @@ async function ensureTrackingSchema(db: D1Database) {
     await db.prepare(`CREATE TABLE IF NOT EXISTS sesiones (
         token_hash TEXT PRIMARY KEY, usuario_id INTEGER NOT NULL, expira_el TEXT NOT NULL,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE);`).run();
-    await db.prepare(`CREATE TABLE IF NOT EXISTS venta_etapas_registradas (
-        venta_id INTEGER NOT NULL, orden INTEGER NOT NULL CHECK (orden BETWEEN 0 AND 3),
-        trabajador_id INTEGER NOT NULL, registrado_el TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (venta_id, orden),
-        FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
-        FOREIGN KEY (trabajador_id) REFERENCES usuarios(id));`).run();
-    await db.prepare(`CREATE TABLE IF NOT EXISTS venta_etapas_omisiones (
-        venta_id INTEGER NOT NULL, orden_omitido INTEGER NOT NULL,
-        detectado_en_orden INTEGER NOT NULL, detectado_el TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (venta_id, orden_omitido),
-        FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE);`).run();
     if (legacyWorkers) await db.exec("DROP TABLE trabajador_cuentas;");
 }
 
@@ -118,7 +107,7 @@ export async function ensureSchema(db: D1Database) {
     await db.exec(`CREATE TABLE IF NOT EXISTS compras ( id INTEGER PRIMARY KEY AUTOINCREMENT, tipo TEXT NOT NULL, categoria TEXT NOT NULL, monto DOUBLE NOT NULL, notas TEXT, creado_el DATETIME DEFAULT CURRENT_TIMESTAMP );`);
     await db.exec(`CREATE TABLE IF NOT EXISTS activos_fijos ( id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL, valor_compra DOUBLE NOT NULL, tasa_depreciacion_anual DOUBLE NOT NULL, fecha_compra TEXT NOT NULL );`);
     await db.exec(`CREATE TABLE IF NOT EXISTS variables_negocio ( id INTEGER PRIMARY KEY AUTOINCREMENT, clave TEXT NOT NULL UNIQUE, valor TEXT NOT NULL );`);
-    await ensureTrackingSchema(db);
+    await ensureSessionSchema(db);
 
     // Insert default variables if they don't exist
     await db.exec(`INSERT OR IGNORE INTO variables_negocio (clave, valor) VALUES ('costo_venta_porcentaje', '50');`);

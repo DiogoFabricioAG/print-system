@@ -6,7 +6,7 @@ import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
-import { salesApi, clientsApi, pagosApi, trackingApi, type Sale, type Client, type ProductionSummary } from "@/lib/api"
+import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
 import { showToast } from "@/lib/toast"
 import { getBusinessDateKey, getCalendarDateKey } from "@/lib/business-date"
 
@@ -17,7 +17,7 @@ interface DateRange {
   to: Date | undefined
 }
 
-function mapSaleToViewModel(sale: Sale, production?: ProductionSummary): SellData {
+function mapSaleToViewModel(sale: Sale): SellData {
   return {
     id: String(sale.id),
     design: sale.diseno,
@@ -31,7 +31,6 @@ function mapSaleToViewModel(sale: Sale, production?: ProductionSummary): SellDat
     cantidad: sale.cantidad,
     metro_total: sale.metro_total,
     maquina: sale.maquina,
-    production,
   }
 }
 
@@ -69,12 +68,11 @@ export function SellsView() {
   const fetchData = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [salesData, clientsData, summaries] = await Promise.all([
+      const [salesData, clientsData] = await Promise.all([
         salesApi.getAll(),
-        clientsApi.getAll(),
-        trackingApi.getSummary().catch(() => null)
+        clientsApi.getAll()
       ])
-      setSales(salesData.map((sale) => mapSaleToViewModel(sale, summaries ? (summaries[sale.id] ?? { registradas: [], omisiones: [] }) : undefined)))
+      setSales(salesData.map(mapSaleToViewModel))
       setClients(clientsData)
     } catch (error) {
       showToast.error("Error al cargar datos")

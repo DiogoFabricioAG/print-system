@@ -1,6 +1,5 @@
 import { formatBusinessDate } from "@/lib/business-date";
 import type { SellData } from "./SellsTable";
-import { getProductionLabel, getProductionStep, PRODUCTION_STATES } from "@/lib/production-status";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +13,6 @@ import {
   MonitorPlay,
   PackageOpen,
   StickyNote,
-  ListChecks,
-  AlertTriangle,
-  Check,
   X,
 } from "lucide-react";
 
@@ -66,10 +62,7 @@ export function SellDetailModal({
   };
 
   const statusStyle = getStatusColor(sell.status);
-  const productionStep = sell.production ? getProductionStep(sell.production) : 0;
-  const alerts = sell.production?.omisiones.filter((alert, index, all) =>
-    all.findIndex((item) => item.etapa === alert.etapa) === index,
-  ) ?? [];
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -177,47 +170,6 @@ export function SellDetailModal({
               </div>
             </div>
           </div>
-
-          {sell.production && (
-            <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-                  <ListChecks className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-600">Proceso de trabajo</p>
-                  <p className="font-semibold text-slate-800">{getProductionLabel(sell.production)}</p>
-                </div>
-              </div>
-              {!sell.production.historica_terminada && <div className="relative mt-5">
-                <div className="absolute left-[16.666%] right-[16.666%] top-4 h-0.5 bg-slate-200" aria-hidden="true" />
-                {productionStep > 0 && <div className="absolute left-[16.666%] top-4 h-0.5 bg-sky-700" style={{ width: `${productionStep * 33.333}%` }} aria-hidden="true" />}
-                <ol className="relative grid grid-cols-3" aria-label="Estados de producción">
-                  {PRODUCTION_STATES.map((state, index) => (
-                    <li key={state} className="flex flex-col items-center gap-2 text-center">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold ${index < productionStep ? "border-sky-700 bg-sky-700 text-white" : index === productionStep ? "border-sky-700 bg-white text-sky-700" : "border-slate-300 bg-white text-slate-600"}`}>
-                        {index < productionStep ? <Check className="h-4 w-4" /> : index + 1}
-                      </span>
-                      <span className={`text-xs font-semibold ${index === productionStep ? "text-sky-700" : index < productionStep ? "text-slate-700" : "text-slate-600"}`}>{state}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>}
-              {sell.production.historica_terminada && (
-                <p className="mt-4 text-sm text-slate-600">Venta anterior a este cambio, marcada como terminada sin validar sus etapas individuales.</p>
-              )}
-              {alerts.length > 0 && (
-                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Etapas sin registrar a tiempo</p>
-                  <ul className="mt-2 space-y-1 pl-6 list-disc">
-                    {alerts.map((alert) => (
-                      <li key={alert.etapa}>{alert.etapa} no estaba registrada cuando se marcó {alert.detectada_al_registrar}.</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Notas */}
           {sell.nota && (

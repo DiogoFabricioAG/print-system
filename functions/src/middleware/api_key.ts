@@ -52,10 +52,7 @@ export function registerApiKeyMiddleware(app: App) {
 		await ensureSchema(c.env.DB);
 		const session = await readSession(c);
 		if (session?.tipo === "jefe") return next();
-		if (session?.tipo === "trabajador" &&
-			(c.req.path === "/api/logout" || c.req.path === "/api/trabajador/ventas" || /^\/api\/trabajador\/ventas\/\d+\/registrar$/.test(c.req.path))) {
-			return next();
-		}
+
 
 		return c.json(errorResponse("Sesión requerida o acceso no permitido"), 401);
 	});

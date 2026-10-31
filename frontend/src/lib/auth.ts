@@ -4,8 +4,7 @@ export interface User {
   id: number
   username: string
   nombre?: string
-  rol: "jefe" | "trabajador"
-  etapa_orden?: number
+  rol: "jefe"
   token: string
 }
 
