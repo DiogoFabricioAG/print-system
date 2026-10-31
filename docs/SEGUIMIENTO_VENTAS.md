@@ -1,35 +1,40 @@
-# Seguimiento trasladado a Work System
+# Tareas independientes en Work System
 
-La aplicaci?n de trabajos se separ? de Print System en un repositorio y
-un despliegue independientes:
+La aplicación de trabajos tiene repositorio y despliegue propios:
 
 - Repositorio: https://github.com/DiogoFabricioAG/work-system
-- Aplicaci?n: https://task-system.diogoabregu.tech
+- Aplicación: https://task-system.diogoabregu.tech
 
-Print System mantiene clientes, ventas, importes, m?todos de pago y el listener.
-Work System consulta ventas y registra las etapas de producci?n, con vistas
-propias para el jefe y los trabajadores. La columna Proceso y su l?nea de tiempo
-ya no forman parte de las ventas en Print System.
+Print System mantiene clientes, ventas, importes, métodos de pago y el listener.
+Registrar una venta no crea tareas. El administrador usa **Nueva tarea** en
+Work System para registrar cliente, diseño/trabajo, fecha y datos opcionales.
+
+Los trabajadores de Impresión y Planchado solo completan su etapa. Una tarea
+queda completada cuando ambos lo registran. Si Planchado registra primero,
+la omisión de Impresión se muestra en Información y el trabajo sigue pendiente
+de impresión. No hay campana ni centro de notificaciones.
 
 ## D1 compartida
 
-Se conservan `usuarios`, `clientes`, `ventas`, `venta_etapas_registradas` y
-`venta_etapas_omisiones`, con sus datos e ID. Work System no modifica las
-columnas comerciales de ventas. No hay sincronizaci?n ni copias entre bases.
+Las aplicaciones comparten `usuarios` y D1. Work System consulta `clientes`
+como sugerencias al registrar una tarea y guarda sus datos en `work_tareas`,
+`work_tarea_etapas` y `work_tarea_omisiones`, sin vínculo con ventas.
+Las ventas y las tablas anteriores `venta_etapas_registradas` y
+`venta_etapas_omisiones` se conservan; no se importan a las tareas nuevas.
 
-Las cuentas son las mismas, pero hay que iniciar sesi?n en cada aplicaci?n:
-Print System usa `sesiones` y Work System usa `work_sesiones`. Un token de una
-aplicaci?n no es v?lido en la otra. Los trabajadores acceden exclusivamente a
-Work System; la URL antigua `/trabajador/ventas` redirige al nuevo acceso.
+Cada aplicación requiere iniciar sesión: Print System usa `sesiones` y Work
+System usa `work_sesiones`. Sus tokens son independientes. Los trabajadores
+acceden a Work System; la URL antigua `/trabajador/ventas` redirige al nuevo acceso.
 
 ## Migraciones y API
 
-Las migraciones hist?ricas 0001 a 0004 de Print System se conservan. Las
-migraciones propias de Work System usan su tabla `work_migrations`. Las rutas
-`/api/seguimiento/*`, `/api/trabajador/*` y `/api/trabajadores/*` se retiraron del
-Worker de Print System y viven en el Worker de Work System.
+Las migraciones de Work System usan `work_migrations`, separada del historial
+de Print System. La migración `20261030_0002_tareas_independientes.sql` añade
+las tablas de tareas sin modificar datos comerciales ni importar ventas.
 
-El flujo actual sigue siendo Impreso -> Planchado -> Procesado, con Terminado
-para los hist?ricos. Las omisiones se consultan en el detalle de cada trabajo.
-No hay campana ni centro de notificaciones. Ver README del repositorio nuevo
-para desarrollo, pruebas, publicaci?n y API.
+El administrador consulta y registra tareas mediante `GET/POST /api/trabajos`.
+Los trabajadores usan `GET /api/trabajador/tareas` y
+`POST /api/trabajador/tareas/:id/completar` en el Worker de Work System.
+Las rutas antiguas de seguimiento por venta ya no se usan.
+
+Ver el README del repositorio nuevo para desarrollo, pruebas y publicación.
