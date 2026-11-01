@@ -87,6 +87,7 @@ export function MetricsView() {
       <section className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-5 sm:p-6" aria-labelledby="trend-title">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4 px-1"><div><h3 id="trend-title" className="text-base font-semibold">{chart === "utilidad" ? "Evolución de ventas y utilidad" : "Entradas y salidas de caja"}</h3><p className="mt-1 text-xs text-slate-600">{chart === "utilidad" ? "El costo estimado y los gastos ya están descontados de la utilidad." : "Cobros registrados frente a insumos y gastos pagados en el periodo."}</p></div><div className="flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1" role="group" aria-label="Tipo de gráfico">{([{ id: "utilidad", label: "Rentabilidad" }, { id: "caja", label: "Caja" }] as const).map(item => <button type="button" key={item.id} aria-pressed={chart === item.id} className={`${button} min-h-11 px-3 ${chart === item.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-600"}`} onClick={() => setChart(item.id)}>{item.label}</button>)}</div></div>
         <MetricsTrend data={data} mode={chart} />
+        {!!data.domingos_omitidos && <p className="mt-3 px-1 text-xs text-slate-600">Domingos sin actividad omitidos. Los domingos con ventas, cobros o gastos se conservan.</p>}
         {total.cantidad === 0 && <p className="mt-3 px-1 text-sm text-slate-600">No hay ventas en este periodo. Los cobros y gastos registrados se muestran igualmente.</p>}
       </section>
 

@@ -62,11 +62,23 @@ const { build } = createRequire(require.resolve('wrangler'))('esbuild');
     assert.equal(loss.resumen.utilidad,-849);
     const empty=(await get('?desde=2026-12-01&hasta=2026-12-01')).data;
     assert.equal(empty.resumen.utilidad,0);assert.equal(empty.resumen.margen,null);assert.equal(empty.serie.length,1);
+    const sunday=(await get('?desde=2026-12-06&hasta=2026-12-06')).data;
+    assert.equal(sunday.serie.length,0);assert.equal(sunday.domingos_omitidos,1);assert.equal(sunday.resumen.ventas,0);
+    const week=(await get('?desde=2026-12-01&hasta=2026-12-07')).data;
+    assert.equal(week.serie.length,6);assert.equal(week.domingos_omitidos,1);
+    const weekly=(await get('?desde=2026-12-01&hasta=2026-12-07&agrupacion=semana')).data;
+    assert.equal(weekly.domingos_omitidos,0);assert.equal(weekly.serie[0].fin,'2026-12-06');
+    assert.equal(loss.serie.length,1); // Real Sunday sale and expense are retained.
+    const emptyDay={fecha:'2026-12-06',ventas:0,costo_estimado:0,gastos:0,utilidad:0,cobros:0,insumos:0,flujo_caja:0,cantidad:0};
+    for(const field of ['ventas','cobros','gastos','insumos','cantidad']) {
+      const activity={...emptyDay,[field]:20};
+      assert.equal(domain.groupDays([activity],'dia').length,1,field+' de domingo debe conservarse');
+    }
     for(const query of ['?desde=2026-02-30','?desde=2026-10-31&hasta=2026-10-30','?desde=2025-01-01&hasta=2026-12-31','?agrupacion=bad']) await get(query,400);
     await db.prepare("UPDATE variables_negocio SET valor='desconocido' WHERE clave='costo_venta_porcentaje'").run();
     await get('?desde=2026-10-30&hasta=2026-10-31',500);
     const counts=await db.prepare('SELECT (SELECT COUNT(*) FROM ventas) AS ventas,(SELECT COUNT(*) FROM pagos) AS pagos,(SELECT COUNT(*) FROM compras) AS compras').first();
     assert.deepEqual(counts,{ventas:5,pagos:2,compras:5});
-    console.log('Metricas D1 local: utilidad/caja distintas, Lima, fechas inclusivas, comparacion, agrupacion consistente, perdidas, vacios, validacion y solo lectura OK.');
+    console.log('Metricas D1 local: domingos vacios omitidos, movimientos dominicales conservados, totales y limites semanales intactos OK.');
   } finally {await proxy.dispose();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

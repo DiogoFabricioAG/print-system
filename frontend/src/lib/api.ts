@@ -226,6 +226,7 @@ export interface MetricsData {
   periodo: { inicio: string; fin: string; dias: number; anterior_inicio: string; anterior_fin: string };
   agrupacion: "dia" | "semana" | "mes";
   costo_porcentaje: number;
+  domingos_omitidos?: number;
   resumen: MetricsSummary;
   anterior: MetricsSummary;
   serie: Array<MetricsSummary & { inicio: string; fin: string }>;

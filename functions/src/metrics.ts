@@ -28,6 +28,10 @@ export function groupDays(days: MetricDay[], grouping: Grouping) {
     const groups = new Map<string, { inicio: string; fin: string; days: MetricDay[] }>();
     for (const day of days) {
         const weekday = new Date(day.fecha + "T12:00:00Z").getUTCDay();
+        // Hide closed Sundays from the daily chart, but never drop real sales,
+        // payments or expenses. Weekly/monthly boundaries remain calendar dates.
+        if (grouping === "dia" && weekday === 0 && day.cantidad === 0
+            && day.ventas === 0 && day.cobros === 0 && day.gastos === 0 && day.insumos === 0) continue;
         const key = grouping === "mes" ? day.fecha.slice(0, 7) : grouping === "semana" ? shiftDay(day.fecha, -((weekday + 6) % 7)) : day.fecha;
         const group = groups.get(key) ?? { inicio: day.fecha, fin: day.fecha, days: [] };
         group.fin = day.fecha; group.days.push(day); groups.set(key, group);

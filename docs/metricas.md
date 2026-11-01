@@ -10,6 +10,10 @@ Compara con los mismos días de duración inmediatamente anteriores al inicio.
 Las fechas explícitas de ventas y pagos son comerciales; los timestamps UTC
 de compras y las ventas sin fecha se convierten al día de Lima.
 
+El gráfico diario, su tabla y el CSV omiten domingos sin ventas, cobros, gastos
+ni compras de insumos. Los domingos con movimientos se conservan. Los totales,
+la duración del periodo de comparación y los límites semanales/mensuales no cambian.
+
 - Ventas: importe de las ventas creadas para el periodo, con cualquier estado.
 - Costo estimado: porcentaje `costo_venta_porcentaje` del negocio, aplicado por día.
 - Gastos operativos: compras de tipo `GASTO` del periodo.

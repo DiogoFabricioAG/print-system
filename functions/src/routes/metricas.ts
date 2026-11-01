@@ -65,9 +65,11 @@ export function registerMetricasRoutes(app: App) {
         }
         const current = [...days.values()].filter(day => day.fecha >= period.inicio);
         const previous = [...days.values()].filter(day => day.fecha < period.inicio);
+        const series = groupDays(current, grouping as Grouping);
         return c.json({ success: true, data: {
             periodo: period, agrupacion: grouping, costo_porcentaje: costRate,
-            resumen: summarize(current), anterior: summarize(previous), serie: groupDays(current, grouping as Grouping),
+            resumen: summarize(current), anterior: summarize(previous), serie: series,
+            domingos_omitidos: grouping === "dia" ? current.length - series.length : 0,
             gastos_categorias: (results[3]?.results ?? []).map(row => ({ categoria: row.categoria ?? "Sin categoría", monto: (row.centimos ?? 0) / 100 })),
             clientes: (results[4]?.results ?? []).map(row => ({ id: row.cliente_id, nombre: row.nombre, ventas: (row.centimos ?? 0) / 100, cantidad: row.cantidad })),
         } });
