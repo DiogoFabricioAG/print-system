@@ -3,7 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import { Topbar } from '../components/dashboard/Topbar';
 import { NavigationPanel } from '../components/dashboard/NavigationPanel';
 import { EstadosFinancieros } from '../components/dashboard/EstadoResultados';
-import { DashboardCharts } from '../components/dashboard/DashboardCharts';
 ---
 
 <Layout title="Dashboard Comercial" showSidebar={false}>
@@ -44,12 +43,5 @@ import { DashboardCharts } from '../components/dashboard/DashboardCharts';
 
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-      <div class="lg:col-span-12 flex flex-col min-h-[400px]">
-        <DashboardCharts 
-          client:load 
-        />
-      </div>
-    </div>
   </div>
 </Layout>

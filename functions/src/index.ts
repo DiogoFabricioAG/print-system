@@ -10,6 +10,7 @@ import { registerPagosRoutes } from "./routes/pagos";
 import { registerActivosFijosRoutes } from "./routes/activos_fijos";
 import { registerEstadoResultados } from "./routes/estado_resultados";
 import { registerVariablesRoutes } from "./routes/variables_negocio";
+import { registerMetricasRoutes } from "./routes/metricas";
 import { isExemptOrigin, registerApiKeyMiddleware } from "./middleware/api_key";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -34,6 +35,7 @@ registerActivosFijosRoutes(app);
 registerVariablesRoutes(app);
 registerPagosRoutes(app);
 registerEstadoResultados(app);
+registerMetricasRoutes(app);
 
 // You may also register routes for non OpenAPI directly on Hono
 // app.get('/test', (c) => c.text('Hono!'))

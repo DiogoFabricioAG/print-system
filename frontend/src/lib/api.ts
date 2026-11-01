@@ -216,3 +216,23 @@ export const pagosApi = {
       method: "DELETE",
     }),
 }
+
+export interface MetricsSummary {
+  ventas: number; costo_estimado: number; gastos: number; utilidad: number;
+  cobros: number; insumos: number; flujo_caja: number; cantidad: number;
+  ticket_promedio: number; margen: number | null;
+}
+export interface MetricsData {
+  periodo: { inicio: string; fin: string; dias: number; anterior_inicio: string; anterior_fin: string };
+  agrupacion: "dia" | "semana" | "mes";
+  costo_porcentaje: number;
+  resumen: MetricsSummary;
+  anterior: MetricsSummary;
+  serie: Array<MetricsSummary & { inicio: string; fin: string }>;
+  gastos_categorias: Array<{ categoria: string; monto: number }>;
+  clientes: Array<{ id: number; nombre: string; ventas: number; cantidad: number }>;
+}
+export const metricsApi = {
+  get: (desde: string, hasta: string, agrupacion: MetricsData["agrupacion"], signal?: AbortSignal) =>
+    fetchApi<MetricsData>(`/metricas?${new URLSearchParams({ desde, hasta, agrupacion })}`, { signal }),
+}
