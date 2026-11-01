@@ -1,7 +1,7 @@
 import * as React from "react";
-import { Download, RefreshCw, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { metricsApi, type MetricsData } from "@/lib/api";
-import { money, dateLabel, presetRange, presets, exportMetrics } from "./metrics-format";
+import { money, dateLabel, presetRange, presets } from "./metrics-format";
 import { MetricsTrend } from "./MetricsTrend";
 
 const control = "min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-700 focus-visible:ring-offset-2";
@@ -45,15 +45,7 @@ export function MetricsView() {
   const maxExpense = Math.max(...categories.map(row => row.monto), 1);
   const maxClient = Math.max(...(data?.clientes.map(row => row.ventas) ?? []), 1);
 
-  return <section className="min-w-0 space-y-7 text-slate-900 sm:space-y-9" aria-labelledby="metrics-title">
-    <div className="flex flex-wrap items-end justify-between gap-4">
-      <div><h2 id="metrics-title" className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Métricas del negocio</h2><p className="mt-2 text-sm text-slate-600">Cuánto vendes, cuánto cobras y cuánto queda.</p></div>
-      <div className="flex gap-2">
-        <button type="button" className={`${button} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50`} onClick={() => setRevision(value => value + 1)} disabled={loading} aria-label="Actualizar métricas"><RefreshCw className="size-4" /></button>
-        <button type="button" className={`${button} border border-slate-300 bg-white text-slate-700 hover:bg-slate-50`} onClick={() => data && exportMetrics(data)} disabled={!data || loading || !!error}><Download className="size-4" />Descargar CSV</button>
-      </div>
-    </div>
-
+  return <section className="min-w-0 space-y-7 text-slate-900 sm:space-y-9" aria-label="Métricas">
     <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
       <div className="grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap" role="group" aria-label="Periodos rápidos">
         {presets.map(item => <button key={item.id} type="button" aria-pressed={preset === item.id} onClick={() => choosePreset(item.id)} className={`${button} px-2 sm:px-4 ${preset === item.id ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"}`}>{item.label}</button>)}

@@ -10,7 +10,7 @@ Compara con los mismos días de duración inmediatamente anteriores al inicio.
 Las fechas explícitas de ventas y pagos son comerciales; los timestamps UTC
 de compras y las ventas sin fecha se convierten al día de Lima.
 
-El gráfico diario, su tabla y el CSV omiten domingos sin ventas, cobros, gastos
+El gráfico diario y su tabla omiten domingos sin ventas, cobros, gastos
 ni compras de insumos. Los domingos con movimientos se conservan. Los totales,
 la duración del periodo de comparación y los límites semanales/mensuales no cambian.
 
@@ -27,7 +27,7 @@ insumos y además el porcentaje estimado. Los cobros dependen de que los pagos
 se hayan registrado: no se infieren a partir del estado «Pagó». El flujo no incluye
 saldos iniciales y no representa el saldo bancario.
 
-Se calcula en céntimos; los totales del gráfico, tabla y CSV se obtienen de las
+Se calcula en céntimos; los totales del gráfico y la tabla se obtienen de las
 mismas filas diarias. La API usa un batch de consultas de solo lectura y no necesita
 migración. La estimación puede mostrar pérdidas. Un periodo sin ventas tiene margen
 no aplicable, en vez de un porcentaje artificial.
