@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { clientsApi, pagosApi, type ClientDetail } from "@/lib/api";
 import { showToast } from "@/lib/toast";
-import { formatBusinessDate, getLimaDateKey } from "@/lib/business-date";
+import { formatBusinessDate, getBusinessDateKey, getLimaDateKey } from "@/lib/business-date";
 import { ClientHistoryTable } from "./ClientHistoryTable";
 import {
   Dialog,
@@ -38,6 +38,8 @@ export function ClientDetailPage() {
   // States for payment modals
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = React.useState(false);
+  const [paymentDefaults, setPaymentDefaults] = React.useState({ amount: "", date: "", description: "" });
+  const [paymentFormVersion, setPaymentFormVersion] = React.useState(0);
   const [editingPago, setEditingPago] = React.useState<{
     id: number;
     pago: number;
@@ -80,6 +82,16 @@ export function ClientDetailPage() {
       setLoading(false);
     }
   }, [clientId, fetchClientData]);
+
+  const openPayment = (sale?: ClientDetail["historial"][number]) => {
+    setPaymentDefaults({
+      amount: sale ? sale.deuda.toFixed(2) : "",
+      date: (sale ? getBusinessDateKey(sale.fecha) : null) ?? getLimaDateKey(),
+      description: sale?.descripcion ?? "",
+    });
+    setPaymentFormVersion((version) => version + 1);
+    setIsPaymentModalOpen(true);
+  };
 
   const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -249,7 +261,7 @@ export function ClientDetailPage() {
 
           <div className="shrink-0 flex items-center min-w-[200px]">
             <Button
-              onClick={() => setIsPaymentModalOpen(true)}
+              onClick={() => openPayment()}
               className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-12 rounded-xl shadow-sm gap-2"
             >
               <PlusCircle className="w-5 h-5" />
@@ -410,6 +422,7 @@ export function ClientDetailPage() {
               fecha: item.fecha,
             })}
             onDeletePayment={setDeletingPagoId}
+            onPayDebt={openPayment}
           />
         )}
       </div>
@@ -421,7 +434,7 @@ export function ClientDetailPage() {
           if (!open && !isSubmittingPayment) setIsPaymentModalOpen(false);
         }}
       >
-        <DialogContent className="sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-y-auto shadow-2xl">
           {isSubmittingPayment && (
             <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
               <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
@@ -433,13 +446,14 @@ export function ClientDetailPage() {
             </div>
           )}
 
-          <form onSubmit={handlePaymentSubmit}>
+          <form key={paymentFormVersion} onSubmit={handlePaymentSubmit}>
             <div className="p-8">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl font-bold text-slate-900 font-display">
                   Registrar Pago / Abono
                 </DialogTitle>
               </DialogHeader>
+              {paymentDefaults.description && <p className="mb-5 break-words text-sm text-slate-600">Venta: {paymentDefaults.description}</p>}
 
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -454,13 +468,15 @@ export function ClientDetailPage() {
                     name="pago"
                     type="number"
                     step="0.01"
+                    min="0.01"
                     placeholder="0.00"
+                    defaultValue={paymentDefaults.amount}
                     required
-                    className="rounded-xl border-slate-200 focus-visible:ring-emerald-500 text-lg font-bold"
+                    className="min-h-11 rounded-xl border-slate-200 focus-visible:ring-emerald-500 text-lg font-bold"
                   />
                   {insights.debtBalance > 0 && (
-                    <p className="text-xs text-rose-500 font-medium mt-1">
-                      Deuda actual: S/{" "}
+                    <p className="text-xs text-rose-700 font-medium mt-1">
+                      Saldo total del cliente: S/{" "}
                       {insights.debtBalance.toLocaleString("es-PE", {
                         minimumFractionDigits: 2,
                       })}
@@ -479,8 +495,8 @@ export function ClientDetailPage() {
                     id="fecha"
                     name="fecha"
                     type="date"
-                    defaultValue={getLimaDateKey()}
-                    className="rounded-xl border-slate-200 focus-visible:ring-emerald-500"
+                    defaultValue={paymentDefaults.date}
+                    className="min-h-11 rounded-xl border-slate-200 focus-visible:ring-emerald-500"
                   />
                 </div>
 
@@ -501,19 +517,19 @@ export function ClientDetailPage() {
               </div>
             </div>
 
-            <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+            <DialogFooter className="mx-0 bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsPaymentModalOpen(false)}
-                className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100"
+                className="min-h-11 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100"
                 disabled={isSubmittingPayment}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                className="min-h-11 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
                 disabled={isSubmittingPayment}
               >
                 Guardar Pago

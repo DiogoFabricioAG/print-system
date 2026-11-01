@@ -11,7 +11,6 @@ interface TopbarProps {
 }
 
 export function Topbar({ inHomePage = false }: TopbarProps) {
-  const [userName, setUserName] = React.useState<string>("");
   const [logoutOpen, setLogoutOpen] = React.useState(false);
 
   async function logout() {
@@ -20,23 +19,6 @@ export function Topbar({ inHomePage = false }: TopbarProps) {
     window.location.replace("/login");
   }
 
-  React.useEffect(() => {
-    const stored = localStorage.getItem("printsystem_user");
-    if (stored) {
-      try {
-        const user = JSON.parse(stored);
-        setUserName(user.username || "");
-      } catch {
-        setUserName("");
-      }
-    }
-  }, []);
-
-  const displayName = React.useMemo(() => {
-    if (!userName) return "Usuario";
-    return userName.replace(/\d+$/, "");
-  }, [userName]);
-
   return (
     <><div className="flex flex-col gap-4 bg-white rounded-2xl px-4 py-4 mb-5 border border-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 md:py-6">
       <div className="flex flex-col">
@@ -44,7 +26,7 @@ export function Topbar({ inHomePage = false }: TopbarProps) {
           Panel Comercial
         </span>
         <h1 className="text-xl md:text-2xl font-bold text-slate-900 mt-1">
-          Bienvenido, {displayName}
+          Bienvenido a Kromata SAC
         </h1>
       </div>
 

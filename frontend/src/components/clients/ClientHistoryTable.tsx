@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Trash2, X } from "lucide-react";
+import { Banknote, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ClientDetail } from "@/lib/api";
@@ -10,10 +10,11 @@ import { containsAmountCell, sumAmountRange, type AmountCell, type AmountColumn,
 type HistoryRow = ClientDetail["historial"][number];
 const money = (value: number) => `S/ ${value.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment }: {
+export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment, onPayDebt }: {
   rows: HistoryRow[];
   onEditPayment: (row: HistoryRow) => void;
   onDeletePayment: (id: number) => void;
+  onPayDebt: (row: HistoryRow) => void;
 }) {
   const [range, setRange] = React.useState<AmountRange | null>(null);
   const dragging = React.useRef(false);
@@ -123,6 +124,7 @@ export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment }: {
               <TableCell className="p-0">{amountButton(item, index, "deuda")}</TableCell>
               <TableCell className="p-0">{amountButton(item, index, "pago")}</TableCell>
               <TableCell className="px-6 py-4">
+                {item.tipo === "venta" && item.deuda > 0 && <Button variant="ghost" size="icon" className="h-11 w-11 rounded-lg text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" onClick={() => onPayDebt(item)} title="Registrar pago de esta deuda" aria-label={`Registrar pago de venta ${item.id}`}><Banknote className="h-4 w-4" /></Button>}
                 {item.tipo === "pago" && <div className="flex gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600" onClick={() => onEditPayment(item)} title="Editar pago"><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => onDeletePayment(item.id)} title="Eliminar pago"><Trash2 className="h-4 w-4" /></Button>
