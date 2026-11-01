@@ -5,7 +5,7 @@ import { money, compactMoney, dateLabel } from "./metrics-format";
 
 export function MetricsTrend({ data, mode }: { data: MetricsData; mode: "utilidad" | "caja" }) {
   const cash = mode === "caja";
-  const rows = data.serie.map(row => ({ ...row, egresos: -Math.round((row.insumos + row.gastos) * 100) / 100 }));
+  const rows = data.serie.map(row => ({ ...row, egresos: 0 - Math.round((row.insumos + row.gastos) * 100) / 100 }));
   const config: ChartConfig = cash ? { cobros: { label: "Cobros", color: "#0369a1" }, egresos: { label: "Egresos", color: "#b45309" }, flujo_caja: { label: "Flujo de caja", color: "#047857" } } : { ventas: { label: "Ventas", color: "#0369a1" }, utilidad: { label: "Utilidad estimada", color: "#047857" } };
   return <figure aria-label={cash ? "Cobros, egresos y flujo de caja del periodo" : "Ventas y utilidad operativa estimada del periodo"} className="min-w-0">
     <ChartContainer config={config} className="aspect-auto h-[280px] w-full sm:h-[330px]">
