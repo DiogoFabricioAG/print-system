@@ -45,6 +45,7 @@ export function ClientDetailPage() {
     pago: number;
     nota: string;
     fecha: string;
+    venta_id?: number | null;
   } | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = React.useState(false);
   const [deletingPagoId, setDeletingPagoId] = React.useState<number | null>(
@@ -111,7 +112,7 @@ export function ClientDetailPage() {
     try {
       await pagosApi.create({
         cliente_id: Number(clientId),
-        venta_id: paymentDefaults.saleId,
+        venta_id: Number(formData.get("venta_id")) || paymentDefaults.saleId,
         pago: pagoNum,
         nota: (formData.get("nota") as string) || undefined,
         fecha: (formData.get("fecha") as string) || undefined,
@@ -143,6 +144,7 @@ export function ClientDetailPage() {
     try {
       await pagosApi.update(editingPago.id, {
         cliente_id: Number(clientId),
+        venta_id: Number(formData.get("venta_id")) || undefined,
         pago: pagoNum,
         nota: (formData.get("nota") as string) || undefined,
         fecha: (formData.get("fecha") as string) || undefined,
@@ -151,7 +153,7 @@ export function ClientDetailPage() {
       setEditingPago(null);
       fetchClientData();
     } catch (error) {
-      showToast.error("Error al actualizar el pago");
+      showToast.error(error instanceof Error ? error.message : "Error al actualizar el pago");
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -422,6 +424,7 @@ export function ClientDetailPage() {
               pago: item.pago,
               nota: item.descripcion === "Abono" ? "" : item.descripcion,
               fecha: item.fecha,
+              venta_id: item.venta_id,
             })}
             onDeletePayment={setDeletingPagoId}
             onPayDebt={openPayment}
@@ -458,6 +461,14 @@ export function ClientDetailPage() {
               {paymentDefaults.description && <p className="mb-5 break-words text-sm text-slate-600">Venta: {paymentDefaults.description}</p>}
 
               <div className="space-y-4">
+                {!paymentDefaults.saleId && <div className="space-y-2">
+                  <Label htmlFor="pago-venta" className="text-slate-700 font-semibold">Venta que paga</Label>
+                  <select id="pago-venta" name="venta_id" defaultValue="" aria-describedby="pago-venta-ayuda" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                    <option value="">Abono general, sin venta específica</option>
+                    {client.historial.filter((item) => item.tipo === "venta").map((sale) => <option key={sale.id} value={sale.id}>#{sale.id} · {formatDate(sale.fecha)} · {sale.descripcion}</option>)}
+                  </select>
+                  <p id="pago-venta-ayuda" className="text-xs text-slate-600">Asócialo a una venta para que se descuente al marcarla como Pagó.</p>
+                </div>}
                 <div className="space-y-2">
                   <Label
                     htmlFor="pago"
@@ -548,7 +559,7 @@ export function ClientDetailPage() {
           if (!open && !isSubmittingEdit) setEditingPago(null);
         }}
       >
-        <DialogContent className="sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] sm:max-w-[450px] bg-white border-slate-200 rounded-2xl p-0 overflow-y-auto shadow-2xl">
           {isSubmittingEdit && (
             <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
               <div className="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center">
@@ -560,7 +571,7 @@ export function ClientDetailPage() {
             </div>
           )}
 
-          <form onSubmit={handleEditSubmit}>
+          <form key={editingPago?.id} onSubmit={handleEditSubmit}>
             <div className="p-8">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl font-bold text-slate-900 font-display">
@@ -569,6 +580,14 @@ export function ClientDetailPage() {
               </DialogHeader>
 
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pago-venta" className="text-slate-700 font-semibold">Venta que paga</Label>
+                  <select id="edit-pago-venta" name="venta_id" defaultValue={editingPago?.venta_id ?? ""} disabled={!!editingPago?.venta_id} aria-describedby="edit-pago-venta-ayuda" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:bg-slate-50">
+                    <option value="">Abono general, sin venta específica</option>
+                    {client.historial.filter((item) => item.tipo === "venta").map((sale) => <option key={sale.id} value={sale.id}>#{sale.id} · {formatDate(sale.fecha)} · {sale.descripcion}</option>)}
+                  </select>
+                  <p id="edit-pago-venta-ayuda" className="text-xs text-slate-600">Vincular un pago existente conserva su importe y evita registrarlo otra vez.</p>
+                </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="edit-pago"
@@ -621,7 +640,7 @@ export function ClientDetailPage() {
               </div>
             </div>
 
-            <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+            <DialogFooter className="mx-0 bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
               <Button
                 type="button"
                 variant="outline"

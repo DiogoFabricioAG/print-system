@@ -9,6 +9,7 @@ MODULE = (ROOT / "functions/src/db/sale-payments.ts").read_text(encoding="utf-8"
 MIGRATION = (ROOT / "functions/migrations/0005_pagos_por_venta.sql").read_text(encoding="utf-8")
 LINK = re.search(r"linkLegacySalePayments = String.raw`(.*?)`;", MODULE, re.S)[1]
 TRIGGER = re.search(r"paidSaleTrigger = String.raw`(.*?)`;", MODULE, re.S)[1]
+GUARD = (ROOT / "functions/migrations/0006_evitar_pago_duplicado_sin_vinculo.sql").read_text(encoding="utf-8")
 
 
 class SalePaymentsTest(unittest.TestCase):
@@ -24,6 +25,7 @@ class SalePaymentsTest(unittest.TestCase):
             INSERT INTO clientes VALUES (1, 'Fixture'), (2, 'Otro');
         ''')
         self.db.executescript(MIGRATION)
+        self.db.executescript(GUARD)
 
     def tearDown(self):
         self.db.close()
@@ -60,6 +62,39 @@ class SalePaymentsTest(unittest.TestCase):
         self.payment(100)
         self.state("Pagó")
         self.assertEqual(len(self.payments()), 1)
+
+    def test_general_payment_blocks_new_charge_until_explicitly_linked(self):
+        self.sale()
+        self.payment(100, sale_id=None)
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "PAGOS_SIN_VENTA"):
+            self.state("Pagó")
+        self.assertEqual(self.db.execute("SELECT estado FROM ventas").fetchone()[0], "Debe")
+        self.assertEqual(len(self.payments()), 1)
+        self.db.execute("UPDATE pagos SET venta_id=1 WHERE venta_id IS NULL")
+        self.state("Pagó")
+        self.assertEqual(len(self.payments()), 1)
+
+    def test_general_advance_is_not_charged_twice(self):
+        self.sale()
+        self.payment(40, sale_id=None)
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "PAGOS_SIN_VENTA"):
+            self.state("Pagó")
+        self.db.execute("UPDATE pagos SET venta_id=1 WHERE venta_id IS NULL")
+        self.state("Pagó")
+        self.assertEqual([row[1] for row in self.payments()], [40, 60])
+
+    def test_covered_sale_is_not_blocked_by_unrelated_general_payment(self):
+        self.sale()
+        self.payment(100)
+        self.payment(40, sale_id=None)
+        self.state("Pagó")
+        self.assertEqual(len(self.payments()), 2)
+
+    def test_another_customers_general_payment_does_not_block(self):
+        self.sale()
+        self.db.execute("INSERT INTO pagos (cliente_id, pago) VALUES (2,100)")
+        self.state("Pagó")
+        self.assertEqual(self.payments()[-1][:2], (1, 100))
 
     def test_same_customer_and_amount_do_not_conflate_sales(self):
         self.sale()
@@ -113,6 +148,7 @@ class SalePaymentsTest(unittest.TestCase):
     def test_runtime_schema_matches_migration(self):
         self.assertIn(LINK.strip(), MIGRATION)
         self.assertIn(TRIGGER.strip(), MIGRATION)
+        self.assertIn(re.search(r"unallocatedPaymentGuard = String.raw`(.*?)`;", MODULE, re.S)[1].strip(), GUARD)
 
     def test_sale_deletion_keeps_financial_record(self):
         self.sale()

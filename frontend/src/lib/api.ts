@@ -75,6 +75,7 @@ export interface ClientDetail {
     descripcion: string
     deuda: number
     pendiente?: number
+    venta_id?: number | null
     pago: number
     fecha: string
   }>
@@ -205,7 +206,7 @@ export const pagosApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: number, data: { cliente_id: number; pago: number; nota?: string; fecha?: string }) =>
+  update: (id: number, data: { cliente_id: number; venta_id?: number; pago: number; nota?: string; fecha?: string }) =>
     fetchApi<Pago>(`/pagos/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

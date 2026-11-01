@@ -249,7 +249,7 @@ export function SellsView() {
       setPendingSellData(null)
       fetchData()
     } catch (error) {
-      showToast.error(`Error al ${isEditing ? 'actualizar' : 'registrar'} venta`)
+      showToast.error(error instanceof Error ? error.message : `Error al ${isEditing ? 'actualizar' : 'registrar'} venta`)
     }
   }
 

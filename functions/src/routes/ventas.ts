@@ -228,45 +228,52 @@ export function registerVentasRoutes(app: App) {
         }
 
         let result;
-        if (payload.fecha !== undefined) {
-             result = await c.env.DB.prepare(
-                `UPDATE ventas
-                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago), fecha = ?
-                WHERE id = ?`
-            )
-                .bind(
-                    payload.diseno,
-                    payload.cliente_id,
-                    payload.cantidad ?? null,
-                    payload.metro_total ?? null,
-                    payload.maquina ?? null,
-                    payload.pago,
-                    payload.estado ?? null,
-                    payload.nota ?? null,
-                    payload.metodo_pago ?? null,
-                    payload.fecha ?? null,
-                    id
+        try {
+            if (payload.fecha !== undefined) {
+                 result = await c.env.DB.prepare(
+                    `UPDATE ventas
+                    SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago), fecha = ?
+                    WHERE id = ?`
                 )
-                .run();
-        } else {
-             result = await c.env.DB.prepare(
-                `UPDATE ventas
-                SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago)
-                WHERE id = ?`
-            )
-                .bind(
-                    payload.diseno,
-                    payload.cliente_id,
-                    payload.cantidad ?? null,
-                    payload.metro_total ?? null,
-                    payload.maquina ?? null,
-                    payload.pago,
-                    payload.estado ?? null,
-                    payload.nota ?? null,
-                    payload.metodo_pago ?? null,
-                    id
+                    .bind(
+                        payload.diseno,
+                        payload.cliente_id,
+                        payload.cantidad ?? null,
+                        payload.metro_total ?? null,
+                        payload.maquina ?? null,
+                        payload.pago,
+                        payload.estado ?? null,
+                        payload.nota ?? null,
+                        payload.metodo_pago ?? null,
+                        payload.fecha ?? null,
+                        id
+                    )
+                    .run();
+            } else {
+                 result = await c.env.DB.prepare(
+                    `UPDATE ventas
+                    SET "diseño" = ?, cliente_id = ?, cantidad = ?, metro_total = ?, maquina = ?, pago = ?, estado = ?, nota = ?, metodo_pago = COALESCE(?, metodo_pago)
+                    WHERE id = ?`
                 )
-                .run();
+                    .bind(
+                        payload.diseno,
+                        payload.cliente_id,
+                        payload.cantidad ?? null,
+                        payload.metro_total ?? null,
+                        payload.maquina ?? null,
+                        payload.pago,
+                        payload.estado ?? null,
+                        payload.nota ?? null,
+                        payload.metodo_pago ?? null,
+                        id
+                    )
+                    .run();
+            }
+        } catch (error) {
+            if (error instanceof Error && error.message.includes("PAGOS_SIN_VENTA")) {
+                return c.json(errorResponse("Este cliente tiene pagos sin venta asociada. En su historial, edita esos pagos y selecciona la venta antes de marcar Pagó, para evitar duplicados."), 409);
+            }
+            throw error;
         }
 
         if (!result.meta.changes) {

@@ -18,6 +18,15 @@ del listener instalado; no necesita actualizarse el ejecutable. Los abonos
 generales de un cliente siguen permitidos sin venta específica. Esos abonos no
 se asignan automáticamente: un mismo cliente puede tener varias ventas.
 
+La migración `0006_evitar_pago_duplicado_sin_vinculo.sql` impide pasar a `Pagó`
+si falta importe por cubrir y el cliente tiene pagos generales sin asociar.
+La API devuelve 409 con instrucciones, sin cambiar el estado ni crear un cobro.
+Desde el historial del cliente, editar el pago y elegir «Venta que paga» permite
+vincular el registro existente, conservando su importe. Después se puede marcar
+la venta `Pagó`; si ya está cubierta no se inserta otro pago, y si hay adelanto
+solo se registra el resto. El formulario de nuevo abono también permite elegir
+la venta. No se asume que dos movimientos con igual importe o fecha sean el mismo.
+
 La migración vincula pagos históricos únicamente si su nota identifica una sola
 venta del mismo cliente. Para `Pago completo - diseño` también exige el mismo
 importe. No crea cobros históricos, ni cambia importes, notas o fechas.

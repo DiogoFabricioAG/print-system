@@ -37,6 +37,22 @@ BEGIN
     HAVING ROUND(NEW.pago * 100) > ROUND(COALESCE(SUM(p.pago), 0) * 100);
 END;`;
 
+// A general customer payment may already cover this sale. Require an explicit
+// association instead of guessing from dates/amounts and creating another charge.
+export const unallocatedPaymentGuard = String.raw`
+CREATE TRIGGER IF NOT EXISTS ventas_exigir_asociacion_pagos
+BEFORE UPDATE OF estado ON ventas
+WHEN NEW.estado = 'Pagó' AND OLD.estado IS NOT 'Pagó'
+    AND ROUND(NEW.pago * 100) > ROUND(COALESCE((
+        SELECT SUM(pago) FROM pagos WHERE venta_id = NEW.id
+    ), 0) * 100)
+    AND EXISTS (
+        SELECT 1 FROM pagos WHERE cliente_id = NEW.cliente_id AND venta_id IS NULL AND pago > 0
+    )
+BEGIN
+    SELECT RAISE(ABORT, 'PAGOS_SIN_VENTA');
+END;`;
+
 export async function ensureSalePaymentsSchema(db: D1Database) {
     const { results } = await db.prepare("PRAGMA table_info(pagos)").all<{ name: string }>();
     if (!results.some((column) => column.name === "venta_id")) {
@@ -48,5 +64,6 @@ export async function ensureSalePaymentsSchema(db: D1Database) {
     await db.batch([
         db.prepare("CREATE INDEX IF NOT EXISTS pagos_venta_id ON pagos(venta_id)"),
         db.prepare(paidSaleTrigger),
+        db.prepare(unallocatedPaymentGuard),
     ]);
 }
