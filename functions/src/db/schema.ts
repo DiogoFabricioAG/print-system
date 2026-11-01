@@ -1,3 +1,5 @@
+import { ensureSalePaymentsSchema } from "./sale-payments";
+
 let schemaReady = false;
 
 async function hasTable(db: D1Database, name: string): Promise<boolean> {
@@ -143,6 +145,8 @@ export async function ensureSchema(db: D1Database) {
             SET fecha = date(NEW.creado_el, '-5 hours')
             WHERE id = NEW.id;
         END;`).run();
+
+    await ensureSalePaymentsSchema(db);
 
     schemaReady = true;
 }

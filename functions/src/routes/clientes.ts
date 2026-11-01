@@ -165,6 +165,7 @@ export function registerClientesRoutes(app: App) {
                 "diseño" AS descripcion,
                 pago as deuda,
                 0 as pago,
+                MAX(ROUND(pago - COALESCE((SELECT SUM(p.pago) FROM pagos p WHERE p.venta_id = ventas.id), 0), 2), 0) AS pendiente,
                 COALESCE(fecha, date(creado_el, '-5 hours')) AS fecha
             FROM ventas
             WHERE cliente_id = ?
@@ -177,6 +178,7 @@ export function registerClientesRoutes(app: App) {
                 COALESCE(nota, 'Abono') AS descripcion,
                 0 as deuda,
                 pago as pago,
+                0 AS pendiente,
                 fecha
             FROM pagos
             WHERE cliente_id = ?
@@ -218,6 +220,7 @@ export function registerClientesRoutes(app: App) {
             id: v.id,
             descripcion: v.descripcion,
             deuda: v.deuda,
+            pendiente: v.pendiente,
             pago: v.pago,
             fecha: v.fecha,
         }));

@@ -1,5 +1,8 @@
 # Corrección de fechas de ventas en D1
 
+Para sincronización de estados «Pagó», vínculos con ventas y auditoría histórica,
+consultar [Pagos por venta](pagos-por-venta.md).
+
 `creado_el` es una marca de tiempo UTC. Entre `00:00:00` y `04:59:59` UTC,
 el día comercial de Lima es el día anterior. A las `05:00:00` UTC ya es
 medianoche en Lima y no se debe restar un día.

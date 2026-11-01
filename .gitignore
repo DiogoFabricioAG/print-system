@@ -13,6 +13,10 @@ functions/.*
 !functions/worker-configuration.d.ts
 !functions/README.md
 !functions/AGENTS.md
+!functions/tests/
+
+# Python verification caches
+__pycache__/
 functions/credentials.json
 functions/private_key.txt
 functions/test.json

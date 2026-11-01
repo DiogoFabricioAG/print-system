@@ -5,17 +5,29 @@ import { errorResponse, getIdParam } from "./helpers";
 
 const pagoCreateSchema = z.object({
     cliente_id: z.number().int().positive(),
+    venta_id: z.number().int().positive().optional(),
     pago: z.number().positive(),
     nota: z.string().nullable().optional(),
     fecha: z.string().nullable().optional(),
 });
+
+async function findPaymentSale(db: D1Database, payload: z.infer<typeof pagoCreateSchema>) {
+    // Keep installed watcher executables compatible: their notes already carry
+    // the sale ID. New web clients send the relationship explicitly.
+    const legacyId = payload.nota?.match(/^(?:Pago total|Adelanto) venta #(\d+)$/)?.[1];
+    const ventaId = payload.venta_id ?? (legacyId ? Number(legacyId) : undefined);
+    if (ventaId === undefined) return { ventaId: null, valid: true };
+    const sale = await db.prepare("SELECT cliente_id FROM ventas WHERE id = ?")
+        .bind(ventaId).first<{ cliente_id: number }>();
+    return { ventaId, valid: sale?.cliente_id === payload.cliente_id };
+}
 
 export function registerPagosRoutes(app: App) {
     app.get("/api/pagos", async (c) => {
         await ensureSchema(c.env.DB);
 
         const { results } = await c.env.DB.prepare(
-            `SELECT p.id, p.cliente_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
+            `SELECT p.id, p.cliente_id, p.venta_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
              FROM pagos p
              LEFT JOIN clientes c ON c.id = p.cliente_id
              ORDER BY p.id DESC`
@@ -46,19 +58,24 @@ export function registerPagosRoutes(app: App) {
             return c.json(errorResponse("cliente_id no existe"), 400);
         }
 
+        const sale = await findPaymentSale(c.env.DB, payload);
+        if (!sale.valid) {
+            return c.json(errorResponse("La venta no existe o no pertenece al cliente del pago"), 400);
+        }
+
         let insert;
         if (payload.fecha) {
             insert = await c.env.DB.prepare(
-                "INSERT INTO pagos (cliente_id, pago, nota, fecha) VALUES (?, ?, ?, ?)"
-            ).bind(payload.cliente_id, payload.pago, payload.nota ?? null, payload.fecha).run();
+                "INSERT INTO pagos (cliente_id, venta_id, pago, nota, fecha) VALUES (?, ?, ?, ?, ?)"
+            ).bind(payload.cliente_id, sale.ventaId, payload.pago, payload.nota ?? null, payload.fecha).run();
         } else {
             insert = await c.env.DB.prepare(
-                "INSERT INTO pagos (cliente_id, pago, nota) VALUES (?, ?, ?)"
-            ).bind(payload.cliente_id, payload.pago, payload.nota ?? null).run();
+                "INSERT INTO pagos (cliente_id, venta_id, pago, nota) VALUES (?, ?, ?, ?)"
+            ).bind(payload.cliente_id, sale.ventaId, payload.pago, payload.nota ?? null).run();
         }
 
         const created = await c.env.DB.prepare(
-            `SELECT p.id, p.cliente_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
+            `SELECT p.id, p.cliente_id, p.venta_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
              FROM pagos p
              LEFT JOIN clientes c ON c.id = p.cliente_id
              WHERE p.id = ?`
@@ -86,16 +103,25 @@ export function registerPagosRoutes(app: App) {
         }
 
         const payload = parsed.data;
+        const existing = await c.env.DB.prepare("SELECT venta_id FROM pagos WHERE id = ?")
+            .bind(id).first<{ venta_id: number | null }>();
+        if (!existing) return c.json(errorResponse("Pago no encontrado"), 404);
+        const sale = await findPaymentSale(c.env.DB, {
+            ...payload, venta_id: payload.venta_id ?? existing.venta_id ?? undefined,
+        });
+        if (!sale.valid) {
+            return c.json(errorResponse("La venta no existe o no pertenece al cliente del pago"), 400);
+        }
         let result;
 
         if (payload.fecha !== undefined) {
             result = await c.env.DB.prepare(
-                "UPDATE pagos SET cliente_id = ?, pago = ?, nota = ?, fecha = ? WHERE id = ?"
-            ).bind(payload.cliente_id, payload.pago, payload.nota ?? null, payload.fecha ?? null, id).run();
+                "UPDATE pagos SET cliente_id = ?, venta_id = ?, pago = ?, nota = ?, fecha = ? WHERE id = ?"
+            ).bind(payload.cliente_id, sale.ventaId, payload.pago, payload.nota ?? null, payload.fecha ?? null, id).run();
         } else {
             result = await c.env.DB.prepare(
-                "UPDATE pagos SET cliente_id = ?, pago = ?, nota = ? WHERE id = ?"
-            ).bind(payload.cliente_id, payload.pago, payload.nota ?? null, id).run();
+                "UPDATE pagos SET cliente_id = ?, venta_id = ?, pago = ?, nota = ? WHERE id = ?"
+            ).bind(payload.cliente_id, sale.ventaId, payload.pago, payload.nota ?? null, id).run();
         }
 
         if (!result.meta.changes) {
@@ -103,7 +129,7 @@ export function registerPagosRoutes(app: App) {
         }
 
         const updated = await c.env.DB.prepare(
-            `SELECT p.id, p.cliente_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
+            `SELECT p.id, p.cliente_id, p.venta_id, c.nombre as cliente_nombre, p.pago, p.nota, p.fecha
              FROM pagos p
              LEFT JOIN clientes c ON c.id = p.cliente_id
              WHERE p.id = ?`

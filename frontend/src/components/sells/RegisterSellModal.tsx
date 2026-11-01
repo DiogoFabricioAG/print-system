@@ -246,17 +246,19 @@ export function RegisterSellModal({
     try {
       if (parsedEntries.length > 0) {
         // Batch mode: create directly via API
-        await salesApi.create(data);
+        const createdSale = await salesApi.create(data);
         
         if (estado === "Pagó" && data.pago > 0) {
           await pagosApi.create({
             cliente_id: data.cliente_id,
+            venta_id: createdSale.id,
             pago: data.pago,
             nota: `Pago completo - ${data.diseno}`,
           });
         } else if (estado === "Crédito" && adelantoNum > 0) {
           await pagosApi.create({
             cliente_id: data.cliente_id,
+            venta_id: createdSale.id,
             pago: adelantoNum,
             nota: `Adelanto - ${data.diseno}`,
           });

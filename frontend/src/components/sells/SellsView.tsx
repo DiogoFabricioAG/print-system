@@ -224,17 +224,19 @@ export function SellsView() {
         setSelectedSell(null)
         showToast.success("Venta actualizada correctamente")
       } else {
-        await salesApi.create(pendingSellData)
+        const createdSale = await salesApi.create(pendingSellData)
         
         if (pendingSellData.estado === "Pagó" && pendingSellData.pago > 0) {
           await pagosApi.create({
             cliente_id: pendingSellData.cliente_id,
+            venta_id: createdSale.id,
             pago: pendingSellData.pago,
             nota: `Pago completo - ${pendingSellData.diseno}`,
           });
         } else if (pendingSellData.estado === "Crédito" && pendingSellData.adelantoAmount && pendingSellData.adelantoAmount > 0) {
           await pagosApi.create({
             cliente_id: pendingSellData.cliente_id,
+            venta_id: createdSale.id,
             pago: pendingSellData.adelantoAmount,
             nota: `Adelanto - ${pendingSellData.diseno}`,
           });

@@ -38,7 +38,7 @@ export function ClientDetailPage() {
   // States for payment modals
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSubmittingPayment, setIsSubmittingPayment] = React.useState(false);
-  const [paymentDefaults, setPaymentDefaults] = React.useState({ amount: "", date: "", description: "" });
+  const [paymentDefaults, setPaymentDefaults] = React.useState<{ amount: string; date: string; description: string; saleId?: number }>({ amount: "", date: "", description: "" });
   const [paymentFormVersion, setPaymentFormVersion] = React.useState(0);
   const [editingPago, setEditingPago] = React.useState<{
     id: number;
@@ -85,9 +85,10 @@ export function ClientDetailPage() {
 
   const openPayment = (sale?: ClientDetail["historial"][number]) => {
     setPaymentDefaults({
-      amount: sale ? sale.deuda.toFixed(2) : "",
+      amount: sale ? (sale.pendiente ?? sale.deuda).toFixed(2) : "",
       date: (sale ? getBusinessDateKey(sale.fecha) : null) ?? getLimaDateKey(),
       description: sale?.descripcion ?? "",
+      saleId: sale?.id,
     });
     setPaymentFormVersion((version) => version + 1);
     setIsPaymentModalOpen(true);
@@ -110,6 +111,7 @@ export function ClientDetailPage() {
     try {
       await pagosApi.create({
         cliente_id: Number(clientId),
+        venta_id: paymentDefaults.saleId,
         pago: pagoNum,
         nota: (formData.get("nota") as string) || undefined,
         fecha: (formData.get("fecha") as string) || undefined,

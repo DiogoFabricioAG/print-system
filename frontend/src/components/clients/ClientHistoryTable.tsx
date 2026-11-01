@@ -124,7 +124,7 @@ export function ClientHistoryTable({ rows, onEditPayment, onDeletePayment, onPay
               <TableCell className="p-0">{amountButton(item, index, "deuda")}</TableCell>
               <TableCell className="p-0">{amountButton(item, index, "pago")}</TableCell>
               <TableCell className="px-6 py-4">
-                {item.tipo === "venta" && item.deuda > 0 && <div className="flex gap-1"><Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600" onClick={() => onPayDebt(item)} title="Registrar pago de esta deuda" aria-label={`Registrar pago de venta ${item.id}`}><Banknote className="h-4 w-4" /></Button></div>}
+                {item.tipo === "venta" && (item.pendiente ?? item.deuda) > 0 && <div className="flex gap-1"><Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600" onClick={() => onPayDebt(item)} title="Registrar pago de esta deuda" aria-label={`Registrar pago de venta ${item.id}`}><Banknote className="h-4 w-4" /></Button></div>}
                 {item.tipo === "pago" && <div className="flex gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600" onClick={() => onEditPayment(item)} title="Editar pago"><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => onDeletePayment(item.id)} title="Eliminar pago"><Trash2 className="h-4 w-4" /></Button>
