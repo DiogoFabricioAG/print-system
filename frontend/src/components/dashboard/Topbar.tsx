@@ -3,13 +3,22 @@ import { ArrowBigLeftDash, Info, LogOut, Table, Search as SearchIcon } from "luc
 import { Button } from "@/components/ui/button";
 import { navigate } from "astro/virtual-modules/transitions-router.js";
 import { authApi } from "@/lib/api";
+import { setUser } from "@/lib/auth";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface TopbarProps {
   inHomePage?: boolean;
 }
 
-export function Topbar({ inHomePage }: TopbarProps) {
+export function Topbar({ inHomePage = false }: TopbarProps) {
   const [userName, setUserName] = React.useState<string>("");
+  const [logoutOpen, setLogoutOpen] = React.useState(false);
+
+  async function logout() {
+    await authApi.logout().catch(() => undefined);
+    setUser(null);
+    window.location.replace("/login");
+  }
 
   React.useEffect(() => {
     const stored = localStorage.getItem("printsystem_user");
@@ -29,7 +38,7 @@ export function Topbar({ inHomePage }: TopbarProps) {
   }, [userName]);
 
   return (
-    <div className="flex flex-col gap-4 bg-white rounded-2xl px-4 py-4 mb-5 border border-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 md:py-6">
+    <><div className="flex flex-col gap-4 bg-white rounded-2xl px-4 py-4 mb-5 border border-slate-200 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 md:py-6">
       <div className="flex flex-col">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Panel Comercial
@@ -72,15 +81,12 @@ export function Topbar({ inHomePage }: TopbarProps) {
         <Button
           variant="outline"
           size="icon"
-          className="rounded-xl h-11 w-11 border-slate-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
-          title={inHomePage ? "Cerrar sesion" : "Volver"}
+          className={`rounded-xl h-11 w-11 border-slate-200 transition-colors ${inHomePage ? "text-rose-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200" : "text-slate-600 hover:bg-slate-100"}`}
+          title={inHomePage ? "Cerrar sesión" : "Volver a inicio"}
+          aria-label={inHomePage ? "Cerrar sesión" : "Volver a inicio"}
           onClick={
             inHomePage
-              ? async () => {
-                  await authApi.logout().catch(() => undefined);
-                  localStorage.removeItem("printsystem_user");
-                  window.location.href = "/login";
-                }
+              ? () => setLogoutOpen(true)
               : () => navigate("/")
           }
         >
@@ -92,5 +98,14 @@ export function Topbar({ inHomePage }: TopbarProps) {
         </Button>
       </div>
     </div>
+    <ConfirmModal
+      isOpen={logoutOpen}
+      onClose={() => setLogoutOpen(false)}
+      onConfirm={logout}
+      title="¿Cerrar sesión?"
+      message="Vas a salir de tu cuenta. Tendrás que iniciar sesión de nuevo para continuar."
+      confirmText="Cerrar sesión"
+      cancelText="Cancelar"
+    /></>
   );
 }

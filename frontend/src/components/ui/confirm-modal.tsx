@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
@@ -16,6 +17,7 @@ interface ConfirmModalProps {
   title: string
   message: string
   confirmText?: string
+  cancelText?: string
 }
 
 export function ConfirmModal({
@@ -24,7 +26,8 @@ export function ConfirmModal({
   onConfirm,
   title,
   message,
-  confirmText = "Sí, confirmar"
+  confirmText = "Sí, confirmar",
+  cancelText = "No, editar"
 }: ConfirmModalProps) {
   const [isConfirming, setIsConfirming] = React.useState(false)
 
@@ -66,23 +69,23 @@ export function ConfirmModal({
               {title}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-slate-600">{message}</p>
+          <DialogDescription className="text-base text-slate-600">{message}</DialogDescription>
         </div>
-        <DialogFooter className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
+        <DialogFooter className="mx-0 bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isConfirming}
-            className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="min-h-11 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
           >
-            No, editar
+            {cancelText}
           </Button>
           <Button
             type="button"
             onClick={handleConfirm}
             disabled={isConfirming}
-            className="rounded-xl bg-sky-700 hover:bg-sky-800 text-white disabled:opacity-50"
+            className="min-h-11 rounded-xl bg-sky-700 hover:bg-sky-800 text-white disabled:opacity-50"
           >
             {confirmText}
           </Button>
