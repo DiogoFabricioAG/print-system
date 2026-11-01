@@ -11,7 +11,6 @@ import {
   Tag,
   Star,
   ArrowLeft,
-  PlusCircle,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -84,12 +83,13 @@ export function ClientDetailPage() {
     }
   }, [clientId, fetchClientData]);
 
-  const openPayment = (sale?: ClientDetail["historial"][number]) => {
+  const openPayment = (sale: ClientDetail["historial"][number]) => {
+    if (sale.tipo !== "venta" || (sale.pendiente ?? sale.deuda) <= 0) return;
     setPaymentDefaults({
-      amount: sale ? (sale.pendiente ?? sale.deuda).toFixed(2) : "",
-      date: (sale ? getBusinessDateKey(sale.fecha) : null) ?? getLimaDateKey(),
-      description: sale?.descripcion ?? "",
-      saleId: sale?.id,
+      amount: (sale.pendiente ?? sale.deuda).toFixed(2),
+      date: getBusinessDateKey(sale.fecha) ?? getLimaDateKey(),
+      description: sale.descripcion,
+      saleId: sale.id,
     });
     setPaymentFormVersion((version) => version + 1);
     setIsPaymentModalOpen(true);
@@ -97,7 +97,7 @@ export function ClientDetailPage() {
 
   const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!clientId || isSubmittingPayment) return;
+    if (!clientId || !paymentDefaults.saleId || isSubmittingPayment) return;
 
     setIsSubmittingPayment(true);
     const formData = new FormData(e.currentTarget);
@@ -112,7 +112,7 @@ export function ClientDetailPage() {
     try {
       await pagosApi.create({
         cliente_id: Number(clientId),
-        venta_id: Number(formData.get("venta_id")) || paymentDefaults.saleId,
+        venta_id: paymentDefaults.saleId,
         pago: pagoNum,
         nota: (formData.get("nota") as string) || undefined,
         fecha: (formData.get("fecha") as string) || undefined,
@@ -263,15 +263,6 @@ export function ClientDetailPage() {
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center min-w-[200px]">
-            <Button
-              onClick={() => openPayment()}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white h-12 rounded-xl shadow-sm gap-2"
-            >
-              <PlusCircle className="w-5 h-5" />
-              Registrar Pago
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -461,14 +452,6 @@ export function ClientDetailPage() {
               {paymentDefaults.description && <p className="mb-5 break-words text-sm text-slate-600">Venta: {paymentDefaults.description}</p>}
 
               <div className="space-y-4">
-                {!paymentDefaults.saleId && <div className="space-y-2">
-                  <Label htmlFor="pago-venta" className="text-slate-700 font-semibold">Venta que paga</Label>
-                  <select id="pago-venta" name="venta_id" defaultValue="" aria-describedby="pago-venta-ayuda" className="min-h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
-                    <option value="">Abono general, sin venta específica</option>
-                    {client.historial.filter((item) => item.tipo === "venta").map((sale) => <option key={sale.id} value={sale.id}>#{sale.id} · {formatDate(sale.fecha)} · {sale.descripcion}</option>)}
-                  </select>
-                  <p id="pago-venta-ayuda" className="text-xs text-slate-600">Asócialo a una venta para que se descuente al marcarla como Pagó.</p>
-                </div>}
                 <div className="space-y-2">
                   <Label
                     htmlFor="pago"

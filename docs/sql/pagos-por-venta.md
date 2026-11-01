@@ -24,8 +24,10 @@ La API devuelve 409 con instrucciones, sin cambiar el estado ni crear un cobro.
 Desde el historial del cliente, editar el pago y elegir «Venta que paga» permite
 vincular el registro existente, conservando su importe. Después se puede marcar
 la venta `Pagó`; si ya está cubierta no se inserta otro pago, y si hay adelanto
-solo se registra el resto. El formulario de nuevo abono también permite elegir
-la venta. No se asume que dos movimientos con igual importe o fecha sean el mismo.
+solo se registra el resto. Los nuevos pagos del historial se abren exclusivamente
+desde el icono de la deuda y quedan vinculados a esa venta automáticamente, sin
+seleccionarla en un formulario. No se asume que dos movimientos con igual importe
+o fecha sean el mismo.
 
 La migración vincula pagos históricos únicamente si su nota identifica una sola
 venta del mismo cliente. Para `Pago completo - diseño` también exige el mismo
