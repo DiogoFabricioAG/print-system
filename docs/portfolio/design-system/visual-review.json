@@ -1,0 +1,26 @@
+{
+  "diagram_type": "architecture",
+  "output": "kromata-design-system.html",
+  "specification_sha256": "aa78b13ac064cbbec121d298b29975a90dbb2aeb511d68b1ab2c7a119489b005",
+  "artifact_sha256": "a71c6973d869324e9034dbbfe2e00fa814f819b0e1e0106135874df02809458c",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "reviewer": "Codex: revisión visual de imágenes renderizadas",
+  "correction_rounds": 2,
+  "reviewed_on": "2026-11-06",
+  "reviewed_images": [
+    "kromata-design-system.visual-check.1440x900.light.png",
+    "kromata-design-system.visual-check.1440x900.dark.png",
+    "kromata-design-system.visual-check.2048x1320.light.png",
+    "kromata-design-system.visual-check.2048x1320.dark.png",
+    "kromata-design-system.png"
+  ],
+  "observations": [
+    "Camino principal horizontal y ramificaciones verticales legibles.",
+    "Etiquetas separadas de los nodos y sin cruces ambiguos.",
+    "Composición equilibrada en los tamaños de escritorio revisados.",
+    "Los temas claro y oscuro conservan los mismos significados.",
+    "La exportación PNG conserva los rótulos y omite los controles del visor."
+  ]
+}

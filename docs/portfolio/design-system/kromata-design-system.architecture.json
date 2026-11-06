@@ -1,0 +1,477 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kromata · Sistema de diseño",
+    "quality_profile": "showcase",
+    "output": "kromata-design-system.html",
+    "viewBox": [
+      1210,
+      640
+    ],
+    "repository": {
+      "url": "https://github.com/DiogoFabricioAG/print-system",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "76858295f27d684a487aeb81fc1669e88d7d4bd0"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "frontend": {
+          "label": "Interfaz y componentes"
+        }
+      }
+    },
+    "views": [
+      {
+        "id": "fundamentos-visuales",
+        "label": "Fundamentos",
+        "focus": [
+          "ds-foundations",
+          "ds-palette",
+          "ds-type-shape"
+        ],
+        "note": "La identidad parte del color, la tipografía y una escala de formas compartida."
+      },
+      {
+        "id": "biblioteca-ui",
+        "label": "Componentes",
+        "focus": [
+          "ds-components",
+          "ds-controls",
+          "ds-feedback"
+        ],
+        "note": "Variantes, estados de interacción y composición sobre shadcn/ui y Base UI."
+      },
+      {
+        "id": "aplicacion-real",
+        "label": "Aplicación",
+        "focus": [
+          "ds-patterns",
+          "ds-tables",
+          "ds-charts",
+          "ds-screens",
+          "ds-sales-clients",
+          "ds-purchases-metrics"
+        ],
+        "note": "Los patrones se convierten en pantallas para operar ventas, pagos, compras y métricas."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      45,
+      64
+    ],
+    "cols": 4,
+    "cellW": 220,
+    "cellH": 86,
+    "gapX": 80,
+    "gapY": 95
+  },
+  "components": [
+    {
+      "id": "ds-palette",
+      "type": "frontend",
+      "label": "Paleta de marca",
+      "sublabel": "#0a1229 · #f4f7ff",
+      "tag": "Electric · Spark · Mint",
+      "row": 0,
+      "col": 0,
+      "sources": [
+        {
+          "path": "frontend/src/styles/global.css",
+          "label": "Paleta declarada"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-foundations",
+      "type": "frontend",
+      "label": "Fundamentos",
+      "sublabel": "Color · tipo · espacio",
+      "tag": "Tailwind CSS 4",
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "path": "frontend/src/styles/global.css",
+          "label": "Variables y escala visual"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-type-shape",
+      "type": "frontend",
+      "label": "Tipografía y forma",
+      "sublabel": "Sora · Manrope · radio base 10 px",
+      "tag": "Roles tipográficos y escala",
+      "row": 2,
+      "col": 0,
+      "sources": [
+        {
+          "path": "frontend/src/styles/global.css",
+          "label": "Fuentes y radios"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-controls",
+      "type": "frontend",
+      "label": "Acciones y entradas",
+      "sublabel": "Botón · input · selector",
+      "tag": "Foco · error · deshabilitado",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        {
+          "path": "frontend/src/components/ui/button.tsx",
+          "label": "Variantes de botón"
+        },
+        {
+          "path": "frontend/src/components/ui/input.tsx",
+          "label": "Campo de entrada"
+        },
+        {
+          "path": "frontend/src/components/metrics/MetricsView.tsx",
+          "label": "Filtros y selectores"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-components",
+      "type": "frontend",
+      "label": "Componentes UI",
+      "sublabel": "shadcn/ui · Base UI · React",
+      "tag": "Variantes reutilizables",
+      "row": 1,
+      "col": 1,
+      "sources": [
+        {
+          "path": "frontend/components.json",
+          "label": "Configuración de la biblioteca"
+        },
+        {
+          "path": "frontend/src/components/ui/button.tsx",
+          "label": "Composición de primitivas"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-feedback",
+      "type": "frontend",
+      "label": "Diálogos y feedback",
+      "sublabel": "Dialog · Toast · ConfirmModal",
+      "tag": "Confirmar acciones relevantes",
+      "row": 2,
+      "col": 1,
+      "sources": [
+        {
+          "path": "frontend/src/components/ui/dialog.tsx",
+          "label": "Diálogo base"
+        },
+        {
+          "path": "frontend/src/components/ui/confirm-modal.tsx",
+          "label": "Confirmación"
+        },
+        {
+          "path": "frontend/src/components/ui/toaster.tsx",
+          "label": "Notificaciones locales"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-tables",
+      "type": "frontend",
+      "label": "Tablas e historial",
+      "sublabel": "Filas compactas · acción por venta",
+      "tag": "Desplazamiento horizontal",
+      "row": 0,
+      "col": 2,
+      "sources": [
+        {
+          "path": "frontend/src/components/sells/SellsTable.tsx",
+          "label": "Tabla de ventas"
+        },
+        {
+          "path": "frontend/src/components/clients/ClientHistoryTable.tsx",
+          "label": "Historial de pagos"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-patterns",
+      "type": "frontend",
+      "label": "Patrones de trabajo",
+      "sublabel": "Componentes orientados a tareas",
+      "tag": "Composición de interfaz",
+      "row": 1,
+      "col": 2,
+      "sources": [
+        {
+          "path": "frontend/src/components/sells/SellsView.tsx",
+          "label": "Flujo de ventas"
+        },
+        {
+          "path": "frontend/src/components/clients/ClientDetailPage.tsx",
+          "label": "Contexto del cliente"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-charts",
+      "type": "frontend",
+      "label": "Lectura de métricas",
+      "sublabel": "Barras + línea · cifras tabulares",
+      "tag": "Color con significado",
+      "row": 2,
+      "col": 2,
+      "sources": [
+        {
+          "path": "frontend/src/components/metrics/MetricsTrend.tsx",
+          "label": "Series y semántica del gráfico"
+        },
+        {
+          "path": "frontend/src/components/metrics/MetricsView.tsx",
+          "label": "Resumen y periodos"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-sales-clients",
+      "type": "frontend",
+      "label": "Ventas y clientes",
+      "sublabel": "Registro · estados · pagos",
+      "tag": "Debe · Crédito · Pagó",
+      "row": 0,
+      "col": 3,
+      "sources": [
+        {
+          "path": "frontend/src/components/sells/SellsTable.tsx",
+          "label": "Estados de una venta"
+        },
+        {
+          "path": "frontend/src/components/clients/ClientDetailPage.tsx",
+          "label": "Pago desde su venta"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-screens",
+      "type": "frontend",
+      "label": "Pantallas del negocio",
+      "sublabel": "Astro · islas de React",
+      "tag": "4 accesos principales",
+      "row": 1,
+      "col": 3,
+      "sources": [
+        {
+          "path": "frontend/src/components/dashboard/NavigationPanel.tsx",
+          "label": "Navegación del negocio"
+        },
+        {
+          "path": "frontend/src/pages/metricas.astro",
+          "label": "Composición de página"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    },
+    {
+      "id": "ds-purchases-metrics",
+      "type": "frontend",
+      "label": "Compras y métricas",
+      "sublabel": "Gastos · periodos · rentabilidad",
+      "tag": "Filtros y comparación",
+      "row": 2,
+      "col": 3,
+      "sources": [
+        {
+          "path": "frontend/src/components/compras/ComprasView.tsx",
+          "label": "Gestión de compras"
+        },
+        {
+          "path": "frontend/src/components/metrics/MetricsView.tsx",
+          "label": "Análisis del periodo"
+        }
+      ],
+      "size": [
+        220,
+        86
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "foundation-to-ui",
+      "from": "ds-foundations",
+      "to": "ds-components",
+      "label": "da estilo",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui-to-patterns",
+      "from": "ds-components",
+      "to": "ds-patterns",
+      "label": "compone",
+      "variant": "emphasis"
+    },
+    {
+      "id": "patterns-to-screens",
+      "from": "ds-patterns",
+      "to": "ds-screens",
+      "label": "organiza",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ds-foundations-to-ds-palette",
+      "from": "ds-foundations",
+      "to": "ds-palette",
+      "label": "incluye",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ds-foundations-to-ds-type-shape",
+      "from": "ds-foundations",
+      "to": "ds-type-shape",
+      "label": "incluye",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        155,
+        345
+      ]
+    },
+    {
+      "id": "ds-components-to-ds-controls",
+      "from": "ds-components",
+      "to": "ds-controls",
+      "label": "incluye",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ds-components-to-ds-feedback",
+      "from": "ds-components",
+      "to": "ds-feedback",
+      "label": "incluye",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        455,
+        345
+      ]
+    },
+    {
+      "id": "ds-patterns-to-ds-tables",
+      "from": "ds-patterns",
+      "to": "ds-tables",
+      "label": "incluye",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ds-patterns-to-ds-charts",
+      "from": "ds-patterns",
+      "to": "ds-charts",
+      "label": "incluye",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        755,
+        345
+      ]
+    },
+    {
+      "id": "ds-screens-to-ds-sales-clients",
+      "from": "ds-screens",
+      "to": "ds-sales-clients",
+      "label": "incluye",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ds-screens-to-ds-purchases-metrics",
+      "from": "ds-screens",
+      "to": "ds-purchases-metrics",
+      "label": "incluye",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1055,
+        345
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "slate",
+      "title": "Identidad compartida",
+      "items": [
+        "Sora + Manrope; radio base de 10 px.",
+        "Ink #0a1229 y Cloud #f4f7ff."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Semántica del negocio",
+      "items": [
+        "Cielo: ventas; esmeralda: pagos y flujo.",
+        "Ámbar: crédito y egresos; rosa: deuda y pérdida."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Decisiones de uso",
+      "items": [
+        "Tablas compactas para buscar y comparar.",
+        "Acciones en la fila que ya contiene el contexto."
+      ]
+    }
+  ]
+}

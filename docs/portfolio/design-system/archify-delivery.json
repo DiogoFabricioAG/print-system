@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "deliver",
+  "type": "architecture",
+  "input": "D:\\Proyectos2026\\print-system\\docs\\portfolio\\design-system\\kromata-design-system.architecture.json",
+  "output": "D:\\Proyectos2026\\print-system\\docs\\portfolio\\design-system\\kromata-design-system.html",
+  "specification": {
+    "sha256": "aa78b13ac064cbbec121d298b29975a90dbb2aeb511d68b1ab2c7a119489b005",
+    "bytes": 11650
+  },
+  "artifact": {
+    "sha256": "a71c6973d869324e9034dbbfe2e00fa814f819b0e1e0106135874df02809458c",
+    "bytes": 824620
+  },
+  "validation": {
+    "checksPassed": 9,
+    "checkCount": 9,
+    "compositionProfile": "showcase",
+    "compositionStatus": "pass",
+    "errors": 0,
+    "warnings": 0
+  },
+  "evidence": {
+    "verified": true,
+    "repository": "https://github.com/DiogoFabricioAG/print-system",
+    "revision": "76858295f27d684a487aeb81fc1669e88d7d4bd0",
+    "references": 23
+  }
+}
