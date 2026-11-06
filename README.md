@@ -1,6 +1,10 @@
 # Print System
 
-Aplicación web para registrar clientes y ventas, conectada a Google Sheets.
+Aplicación comercial con Astro y React, una API Hono en Cloudflare Workers,
+persistencia en D1 y sincronización secundaria con Google Sheets.
+
+[Ver la arquitectura interactiva del ecosistema](https://print-system.diogoabregu.tech/portfolio/kromata-arquitectura.html)
+· [Documentación y tecnologías verificadas](docs/portfolio/architecture/README.md).
 
 El seguimiento de producción vive en el repositorio independiente
 [Work System](https://github.com/DiogoFabricioAG/work-system), disponible en

@@ -1,0 +1,21 @@
+{
+  "artifact_sha256": "5c19c2babd971a4ca3b3dee5a4c6d13f85d37e24b8f7ae88344c05beccfd3bea",
+  "source": "Export del visor Archify sin modificar el HTML",
+  "theme": "light",
+  "files": [
+    {
+      "path": "kromata-arquitectura.svg",
+      "bytes": 170396,
+      "sha256": "d11a45427d94d627540b15c97e2736adadeed49fbe2149cbdefffc332b3022cc"
+    },
+    {
+      "path": "kromata-arquitectura.png",
+      "bytes": 700526,
+      "sha256": "8cdb16ef7f3afd016eab0f04e7beee13de44bbf8b1746bc9621ec86a136c1904"
+    }
+  ],
+  "png": {
+    "width": 4920,
+    "height": 2720
+  }
+}

@@ -1,0 +1,485 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Kromata · Arquitectura",
+    "quality_profile": "showcase",
+    "output": "kromata-arquitectura.html",
+    "viewBox": [
+      1230,
+      680
+    ],
+    "repository": {
+      "url": "https://github.com/DiogoFabricioAG/print-system",
+      "provider": "github",
+      "revision": "73b1b1f9a6e6332de2baef50687629e0a48a3e64",
+      "link_mode": "web"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "frontend": {
+          "label": "Aplicaciones web"
+        },
+        "backend": {
+          "label": "APIs y agente local"
+        },
+        "database": {
+          "label": "Persistencia"
+        },
+        "external": {
+          "label": "Actores e integraciones"
+        }
+      }
+    },
+    "views": [
+      {
+        "id": "dominio-comercial",
+        "label": "Print System",
+        "focus": [
+          "com-admin",
+          "com-web",
+          "com-api",
+          "shared-d1",
+          "sheets-replica"
+        ],
+        "note": "Operación comercial en Vercel y Cloudflare; D1 conserva el registro principal y Sheets recibe una copia operativa."
+      },
+      {
+        "id": "dominio-produccion",
+        "label": "Job System",
+        "focus": [
+          "production-team",
+          "job-web",
+          "job-api",
+          "shared-d1"
+        ],
+        "note": "Una aplicación propia para crear tareas desde ventas, completar etapas y confirmar la entrega por el administrador."
+      },
+      {
+        "id": "captura-windows",
+        "label": "Listener Windows",
+        "focus": [
+          "png-input",
+          "windows-agent",
+          "local-state",
+          "com-api",
+          "shared-d1"
+        ],
+        "note": "Los PNG locales pasan por revisión Tkinter; el agente usa la API comercial y conserva reintentos en SQLite."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [
+      40,
+      60
+    ],
+    "cols": 4,
+    "cellW": 220,
+    "cellH": 86,
+    "gapX": 90,
+    "gapY": 112
+  },
+  "components": [
+    {
+      "id": "com-admin",
+      "type": "external",
+      "label": "Administrador",
+      "sublabel": "Gestión comercial",
+      "tag": "Cuenta de usuario",
+      "row": 0,
+      "col": 0,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "functions/src/auth/session.ts",
+          "label": "Sesión comercial"
+        }
+      ]
+    },
+    {
+      "id": "com-web",
+      "type": "frontend",
+      "label": "Print System",
+      "sublabel": "Astro · React · TypeScript",
+      "tag": "Vercel · Tailwind CSS",
+      "row": 1,
+      "col": 0,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "frontend/package.json",
+          "label": "Tecnologías del frontend"
+        },
+        {
+          "path": "frontend/src/lib/api.ts",
+          "label": "Cliente HTTPS y token"
+        },
+        {
+          "path": "docs/portfolio/architecture/evidence.md",
+          "label": "Hosting en Vercel"
+        }
+      ],
+      "brand": "vercel"
+    },
+    {
+      "id": "com-api",
+      "type": "backend",
+      "label": "API comercial",
+      "sublabel": "Hono · Zod · TypeScript",
+      "tag": "Workers · sesión o API key",
+      "row": 1,
+      "col": 1,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "functions/src/index.ts",
+          "label": "Entrypoint Hono"
+        },
+        {
+          "path": "functions/wrangler.jsonc",
+          "label": "Worker y binding D1"
+        },
+        {
+          "path": "functions/src/middleware/api_key.ts",
+          "label": "Acceso web y listener"
+        }
+      ],
+      "brand": "cloudflare"
+    },
+    {
+      "id": "shared-d1",
+      "type": "database",
+      "label": "Cloudflare D1",
+      "sublabel": "gamarra_db · SQLite",
+      "tag": "Usuarios y datos compartidos",
+      "row": 1,
+      "col": 2,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "functions/src/db/schema.ts",
+          "label": "Tablas comerciales y usuarios"
+        },
+        {
+          "path": "functions/wrangler.jsonc",
+          "label": "Base de datos compartida"
+        },
+        {
+          "path": "docs/portfolio/architecture/evidence.md",
+          "label": "Tablas y sesiones de Job System"
+        }
+      ],
+      "brand": "cloudflare"
+    },
+    {
+      "id": "job-api",
+      "type": "backend",
+      "label": "API de trabajos",
+      "sublabel": "Hono · Zod · permisos por rol",
+      "tag": "Workers: gestion-trabajos",
+      "row": 1,
+      "col": 3,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "docs/portfolio/architecture/evidence.md",
+          "label": "Work System: Worker y permisos"
+        }
+      ],
+      "brand": "cloudflare"
+    },
+    {
+      "id": "job-web",
+      "type": "frontend",
+      "label": "Job System",
+      "sublabel": "Work System · React + Vite",
+      "tag": "Workers Assets · TypeScript",
+      "row": 0,
+      "col": 3,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "docs/portfolio/architecture/evidence.md",
+          "label": "SPA React en el mismo Worker"
+        }
+      ],
+      "brand": "react"
+    },
+    {
+      "id": "production-team",
+      "type": "external",
+      "label": "Equipo de producción",
+      "sublabel": "Jefe · Impresión · Planchado",
+      "tag": "Etapas con autor y fecha",
+      "row": 0,
+      "col": 2,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "docs/portfolio/architecture/evidence.md",
+          "label": "Roles y registro de entregas"
+        }
+      ]
+    },
+    {
+      "id": "sheets-replica",
+      "type": "external",
+      "label": "Google Sheets",
+      "sublabel": "API REST · cuenta de servicio",
+      "tag": "Sincronización secundaria",
+      "row": 0,
+      "col": 1,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "functions/src/sheets.ts",
+          "label": "Integración con Google"
+        },
+        {
+          "path": "functions/src/routes/ventas.ts",
+          "label": "Persistencia antes de sincronizar"
+        }
+      ]
+    },
+    {
+      "id": "png-input",
+      "type": "external",
+      "label": "PNG locales",
+      "sublabel": "Carpeta vigilada en Windows",
+      "tag": "Filtro de origen web",
+      "row": 2,
+      "col": 0,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "watcher/source_filter.py",
+          "label": "Marca de procedencia web"
+        },
+        {
+          "path": "watcher/watcher.py",
+          "label": "Eventos de archivos PNG"
+        }
+      ]
+    },
+    {
+      "id": "windows-agent",
+      "type": "backend",
+      "label": "Listener Windows",
+      "sublabel": "Python · watchdog · Tkinter",
+      "tag": "PyInstaller · ejecutable .exe",
+      "row": 2,
+      "col": 1,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "watcher/watcher.py",
+          "label": "Revisión y registro por API"
+        },
+        {
+          "path": "watcher/requirements.txt",
+          "label": "Dependencias Python"
+        },
+        {
+          "path": ".github/workflows/watcher-release.yml",
+          "label": "Compilación y release"
+        }
+      ],
+      "brand": "python"
+    },
+    {
+      "id": "local-state",
+      "type": "database",
+      "label": "Estado del listener",
+      "sublabel": "SQLite local · state.db",
+      "tag": "Procesados · pendientes · reintentos",
+      "row": 2,
+      "col": 2,
+      "size": [
+        220,
+        86
+      ],
+      "sources": [
+        {
+          "path": "watcher/state.py",
+          "label": "Persistencia local del agente"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Print System · dominio comercial",
+      "wraps": [
+        "com-web",
+        "com-api"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "Job System · API + SPA en Cloudflare",
+      "wraps": [
+        "job-api",
+        "job-web"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "Equipo Windows · captura local",
+      "wraps": [
+        "png-input",
+        "windows-agent",
+        "local-state"
+      ],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "id": "admin-uses-print",
+      "from": "com-admin",
+      "to": "com-web",
+      "label": "usa",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        150,
+        172
+      ]
+    },
+    {
+      "id": "print-web-to-api",
+      "from": "com-web",
+      "to": "com-api",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "commercial-sql",
+      "from": "com-api",
+      "to": "shared-d1",
+      "label": "SQL",
+      "variant": "emphasis"
+    },
+    {
+      "id": "job-web-to-api",
+      "from": "job-web",
+      "to": "job-api",
+      "label": "REST",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1080,
+        172
+      ]
+    },
+    {
+      "id": "production-sql",
+      "from": "job-api",
+      "to": "shared-d1",
+      "label": "SQL",
+      "variant": "emphasis",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "team-uses-job",
+      "from": "production-team",
+      "to": "job-web",
+      "label": "opera",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "sheets-sync",
+      "from": "com-api",
+      "to": "sheets-replica",
+      "label": "REST · JWT",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "png-event",
+      "from": "png-input",
+      "to": "windows-agent",
+      "label": "watchdog",
+      "variant": "dashed"
+    },
+    {
+      "id": "agent-to-api",
+      "from": "windows-agent",
+      "to": "com-api",
+      "label": "POST · API key",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "agent-local-state",
+      "from": "windows-agent",
+      "to": "local-state",
+      "label": "SQLite"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Aplicaciones independientes",
+      "items": [
+        "Print System: ventas, clientes, pagos y métricas.",
+        "Job System: tareas, etapas, plazos y entregas."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Datos compartidos, sesiones propias",
+      "items": [
+        "D1 y usuarios compartidos; sesiones separadas.",
+        "El jefe crea cada tarea a partir de una venta."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Operación y despliegue",
+      "items": [
+        "Impresión y Planchado; entrega a cargo del jefe.",
+        "GitHub Actions + PyInstaller publican el .exe."
+      ]
+    }
+  ]
+}

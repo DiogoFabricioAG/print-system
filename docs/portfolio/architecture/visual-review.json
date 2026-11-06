@@ -1,0 +1,25 @@
+{
+  "diagram_type": "architecture",
+  "output": "kromata-arquitectura.html",
+  "specification_sha256": "e755356548a3111c8512858d80a85c01a20c6496c2d7d5390782add7e2be0be4",
+  "artifact_sha256": "5c19c2babd971a4ca3b3dee5a4c6d13f85d37e24b8f7ae88344c05beccfd3bea",
+  "validation": "9/9 showcase, 0 errors, 0 warnings",
+  "browser_evidence": "passed",
+  "visual_review": "passed",
+  "reviewer": "Codex: revisión visual de imágenes renderizadas",
+  "correction_rounds": 1,
+  "reviewed_images": [
+    "kromata-arquitectura.visual-check.1440x900.light.png",
+    "kromata-arquitectura.visual-check.1440x900.dark.png",
+    "kromata-arquitectura.visual-check.2048x1320.light.png",
+    "kromata-arquitectura.visual-check.2048x1320.dark.png",
+    "kromata-arquitectura.png"
+  ],
+  "observations": [
+    "La D1 compartida conecta las dos APIs sin inventar una llamada entre sistemas.",
+    "Los dominios comercial, producción y captura Windows se distinguen visualmente.",
+    "Las etiquetas, iconos y rutas se leen en ambos temas.",
+    "El título ocupa una sola línea y el documento cabe en los tamaños de escritorio revisados.",
+    "El PNG muestra también las tecnologías de despliegue en las etiquetas de contexto."
+  ]
+}
