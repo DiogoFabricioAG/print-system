@@ -1,3 +1,4 @@
 # Preserve the exact bytes bound by the Archify delivery/export receipts.
 docs/portfolio/design-system/** -text
 frontend/public/portfolio/** -text
+docs/portfolio/architecture/** -text
