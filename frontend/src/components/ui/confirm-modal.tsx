@@ -18,6 +18,8 @@ interface ConfirmModalProps {
   message: string
   confirmText?: string
   cancelText?: string
+  children?: React.ReactNode
+  confirmDisabled?: boolean
 }
 
 export function ConfirmModal({
@@ -27,7 +29,9 @@ export function ConfirmModal({
   title,
   message,
   confirmText = "Sí, confirmar",
-  cancelText = "No, editar"
+  cancelText = "No, editar",
+  children,
+  confirmDisabled = false,
 }: ConfirmModalProps) {
   const [isConfirming, setIsConfirming] = React.useState(false)
 
@@ -39,7 +43,7 @@ export function ConfirmModal({
   }, [isOpen])
 
   const handleConfirm = async () => {
-    if (isConfirming) return
+    if (isConfirming || confirmDisabled) return
     setIsConfirming(true)
     try {
       await onConfirm()
@@ -52,7 +56,7 @@ export function ConfirmModal({
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open && !isConfirming) onClose()
     }}>
-      <DialogContent className="sm:max-w-[400px] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
+      <DialogContent showCloseButton={!isConfirming} className="sm:max-w-[400px] max-h-[calc(100dvh-2rem)] grid-rows-[minmax(0,1fr)_auto] bg-white border-slate-200 rounded-2xl p-0 overflow-hidden shadow-2xl">
         {/* Overlay de carga */}
         {isConfirming && (
           <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
@@ -63,13 +67,14 @@ export function ConfirmModal({
           </div>
         )}
 
-        <div className="p-8">
+        <div className="min-h-0 overflow-y-auto p-6 sm:p-8">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-bold text-slate-900 font-display">
               {title}
             </DialogTitle>
           </DialogHeader>
           <DialogDescription className="text-base text-slate-600">{message}</DialogDescription>
+          {children}
         </div>
         <DialogFooter className="mx-0 bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-3 sm:justify-end">
           <Button
@@ -84,7 +89,7 @@ export function ConfirmModal({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isConfirming}
+            disabled={isConfirming || confirmDisabled}
             className="min-h-11 rounded-xl bg-sky-700 hover:bg-sky-800 text-white disabled:opacity-50"
           >
             {confirmText}

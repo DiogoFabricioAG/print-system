@@ -6,7 +6,8 @@ import { SellDetailModal } from "./SellDetailModal"
 import { EditSellModal } from "./EditSellModal"
 import { RegisterSellModal } from "./RegisterSellModal"
 import { ConfirmModal } from "@/components/ui/confirm-modal"
-import { salesApi, clientsApi, pagosApi, type Sale, type Client } from "@/lib/api"
+import { ApiError, salesApi, clientsApi, pagosApi, type Sale, type Client, type SalePaymentReview, type SalePaymentResolution } from "@/lib/api"
+import { SalePaymentReviewFields } from "./SalePaymentReviewFields"
 import { showToast } from "@/lib/toast"
 import { getBusinessDateKey, getCalendarDateKey } from "@/lib/business-date"
 
@@ -64,6 +65,8 @@ export function SellsView() {
     adelantoAmount?: number
   } | null>(null)
   const [isEditing, setIsEditing] = React.useState(false)
+  const [paymentReview, setPaymentReview] = React.useState<SalePaymentReview | null>(null)
+  const [paymentResolution, setPaymentResolution] = React.useState<SalePaymentResolution | null>(null)
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -212,14 +215,19 @@ export function SellsView() {
   }) => {
     setPendingSellData(data)
     setIsEditing(true)
+    setPaymentReview(null)
+    setPaymentResolution(null)
     setIsConfirmModalOpen(true)
   }
 
   const handleConfirmSubmit = async () => {
-    if (!pendingSellData) return
+    if (!pendingSellData || (paymentReview && !paymentResolution)) return
     try {
       if (isEditing) {
-        await salesApi.update(Number(selectedSell?.id), pendingSellData)
+        await salesApi.update(Number(selectedSell?.id), {
+          ...pendingSellData,
+          ...(paymentResolution ? { payment_resolution: paymentResolution } : {}),
+        })
         setIsEditModalOpen(false)
         setSelectedSell(null)
         showToast.success("Venta actualizada correctamente")
@@ -247,8 +255,17 @@ export function SellsView() {
       }
       setIsConfirmModalOpen(false)
       setPendingSellData(null)
+      setPaymentReview(null)
+      setPaymentResolution(null)
       fetchData()
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409 && error.details
+        && typeof error.details === "object" && "code" in error.details
+        && error.details.code === "SALE_PAYMENT_REVIEW") {
+        setPaymentResolution(null)
+        setPaymentReview(error.details as SalePaymentReview)
+        return
+      }
       showToast.error(error instanceof Error ? error.message : `Error al ${isEditing ? 'actualizar' : 'registrar'} venta`)
     }
   }
@@ -256,6 +273,8 @@ export function SellsView() {
   const handleConfirmClose = () => {
     setIsConfirmModalOpen(false)
     setPendingSellData(null)
+    setPaymentReview(null)
+    setPaymentResolution(null)
   }
 
   if (loading) {
@@ -322,10 +341,13 @@ export function SellsView() {
         isOpen={isConfirmModalOpen}
         onClose={handleConfirmClose}
         onConfirm={handleConfirmSubmit}
-        title={isEditing ? "¿Actualizar venta?" : "¿Registrar venta?"}
-        message={isEditing ? "¿Estás seguro de que deseas actualizar esta venta?" : "¿Estás seguro de que deseas registrar esta venta?"}
-        confirmText={isEditing ? "Sí, actualizar" : "Sí, registrar"}
-      />
+        title={paymentReview ? "Confirmar pago de la venta" : isEditing ? "¿Actualizar venta?" : "¿Registrar venta?"}
+        message={paymentReview ? "Este cliente tiene pagos anteriores sin venta asignada. Indica si alguno corresponde a esta venta para evitar duplicarlo." : isEditing ? "¿Estás seguro de que deseas actualizar esta venta?" : "¿Estás seguro de que deseas registrar esta venta?"}
+        confirmText={paymentResolution ? paymentResolution.new_payment_amount > 0 ? `Guardar y registrar S/ ${paymentResolution.new_payment_amount.toFixed(2)}` : "Usar pago y actualizar" : isEditing ? "Sí, actualizar" : "Sí, registrar"}
+        confirmDisabled={Boolean(paymentReview && !paymentResolution)}
+      >
+        {paymentReview && <SalePaymentReviewFields review={paymentReview} onChange={setPaymentResolution} />}
+      </ConfirmModal>
 
       {/* NOTE PANEL — floating, compact, no backdrop */}
       {noteSell && (

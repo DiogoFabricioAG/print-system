@@ -1,5 +1,25 @@
 const API_BASE = import.meta.env.PUBLIC_API_BASE_URL || "https://functions.diogofabricio17.workers.dev/api"
 
+export class ApiError extends Error {
+  constructor(message: string, public status: number, public details?: unknown) {
+    super(message)
+    this.name = "ApiError"
+  }
+}
+
+export interface SalePaymentReview {
+  code: "SALE_PAYMENT_REVIEW"
+  pending_amount: number
+  payments: { id: number; pago: number; nota: string | null; fecha: string | null }[]
+  version: string
+}
+
+export interface SalePaymentResolution {
+  version: string
+  existing_payment_ids: number[]
+  new_payment_amount: number
+}
+
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const stored = typeof localStorage === "undefined" ? null : localStorage.getItem("printsystem_user")
   const token = stored ? (() => { try { return JSON.parse(stored).token as string | undefined } catch { return undefined } })() : undefined
@@ -16,7 +36,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   const data = await response.json()
 
   if (!data.success) {
-    throw new Error(data.error || "Error desconocido")
+    throw new ApiError(data.error || "Error desconocido", response.status, data.details)
   }
 
   return data.data
@@ -178,6 +198,7 @@ export const salesApi = {
     estado?: string
     nota?: string
     fecha?: string
+    payment_resolution?: SalePaymentResolution
   }) =>
     fetchApi<Sale>(`/ventas/${id}`, {
       method: "PUT",
