@@ -8,7 +8,7 @@ persistencia en D1 y sincronización secundaria con Google Sheets.
 
 El seguimiento de producción vive en el repositorio independiente
 [Work System](https://github.com/DiogoFabricioAG/work-system), disponible en
-https://task-system.diogoabregu.tech. Ambos sistemas comparten
+https://task-system.diogoabregu.com. Ambos sistemas comparten
 D1 y cuentas; cada aplicación tiene sus propias sesiones y responsabilidades.
 El administrador crea las tareas directamente en Work System; registrar una
 venta en Print System no crea tareas.
