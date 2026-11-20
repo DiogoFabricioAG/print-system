@@ -3,7 +3,7 @@
 Vigila una carpeta local y **registra una venta en Print System cada vez que aparece un PNG nuevo**, usando la API con `X-API-Key` (servicio externo).
 
 ```
-entrada/nuevo.png
+RIP/nuevo.png
   → watchdog detecta el archivo y espera a que esté estable
   → valida que el nombre termine en .png + parsea el nombre
   → muestra siempre Tkinter para revisar/editar la venta y confirmar
@@ -53,34 +53,25 @@ Edita `.env`:
 
 ```ini
 WATCH_ROOT=C:\PrintSystem\ventas
-# WATCH_FOLDER=D:\Disenos\cola   # opcional: carpeta monitoreada si es distinta de <WATCH_ROOT>\entrada
-# ADDITIONAL_WATCH_FOLDERS=E:\RecepcionPNG;F:\Trabajos\salida
-BLOCK_WEB_DOWNLOADS=true   # ignora descargas web; permite exportaciones locales
+# WATCH_FOLDER=D:\RIP  # ruta de RIP en esta maquina; por defecto <WATCH_ROOT>\RIP
 API_URL=https://functions.diogofabricio17.workers.dev/api
 API_KEY=tu-api-key   # la generas con `npm run api-key` en functions/
 SEPARATOR=" - "      # separador del nombre de archivo
 ```
 
-El bloqueo de descargas web está activado por defecto (`BLOCK_WEB_DOWNLOADS=true`).
-Si `WATCH_FOLDER` apunta a Descargas, puedes mantenerla vigilada sin registrar
-PNG descargados de Internet. El
-watcher lee `Zone.Identifier` (zonas 3 y 4) **antes de abrir la revisión, mover
-el archivo desde una carpeta adicional o enviar la venta a la API**. El PNG
-ignorado queda intacto en su carpeta. Un PNG creado localmente por CorelDRAW,
-sin esa marca, sigue el flujo normal.
+Solo se monitorea la carpeta RIP indicada en `WATCH_FOLDER` (o
+`<WATCH_ROOT>\RIP` si no se define). Cada PNG nuevo abre la revisión de
+Tkinter, tanto si lo exportó CorelDRAW como si lo descargó un navegador.
+La extensión se acepta sin distinguir mayúsculas (`.png`, `.PNG`). El nombre
+solo se utiliza para precargar el formulario; un nombre diferente también
+permite completar los datos manualmente. La venta requiere confirmación.
 
-Esta marca identifica la procedencia web, **no el programa Chrome**: también
-puede bloquear descargas de otros navegadores. Si Windows no conserva la marca
-(por configuración, copia a un disco sin NTFS o eliminación manual), el watcher
-no puede distinguir el origen y procesará el PNG. Para inspeccionar un ejemplo
-en la máquina donde corre el watcher:
-
-```powershell
-Get-Content -LiteralPath 'C:\ruta\archivo.png' -Stream Zone.Identifier
-```
-
-Si en otra instalación necesitas procesar descargas web, configura
-`BLOCK_WEB_DOWNLOADS=false` en su `.env`.
+No se vigilan carpetas adicionales ni se inspecciona la marca de procedencia
+de Windows. Los valores antiguos `ADDITIONAL_WATCH_FOLDERS` y
+`BLOCK_WEB_DOWNLOADS` se ignoran aunque sigan presentes en el `.env`.
+No cambies `WATCH_ROOT`: conserva los datos, logs y control de duplicados.
+Para usar una carpeta RIP existente, cambia únicamente `WATCH_FOLDER` por
+su ruta completa en esa máquina.
 
 ## Mover a otra máquina
 
@@ -229,7 +220,7 @@ Puedes cambiar `-IntervalMinutes` y `-StaleMinutes` al instalarlo. El supervisor
 
 ```
 <WATCH_ROOT>\
-├── entrada\      PNG a procesar (solo si WATCH_FOLDER no está definido)
+├── RIP\          PNG a procesar (solo si WATCH_FOLDER no está definido)
 ├── procesados\   ventas registradas correctamente
 ├── rechazados\   nombres inválidos o archivos ignorados (+ <archivo>.motivo.txt)
 ├── pendientes\   requieren revisión manual (API caída tras reintentos, sin GUI, etc.)
@@ -237,7 +228,7 @@ Puedes cambiar `-IntervalMinutes` y `-StaleMinutes` al instalarlo. El supervisor
 └── state.db      SQLite: procesados, reintentos y pendientes
 ```
 
-> `WATCH_FOLDER` (opcional) define la carpeta **principal** monitoreada; si no se define, se usa `<WATCH_ROOT>\entrada`. `ADDITIONAL_WATCH_FOLDERS` (opcional) acepta varias rutas separadas por `;`. Los PNG nuevos de esas carpetas se mueven a la principal para centralizar el procesamiento. Si ya existe un archivo con el mismo nombre en la principal, la copia adicional va a `pendientes/` para evitar sobrescribirlo.
+> `WATCH_FOLDER` define la única carpeta monitoreada, RIP. Si no se define, se usa `<WATCH_ROOT>\RIP`. No se importan PNG desde Descargas ni desde otras carpetas.
 
 ## Confiabilidad
 

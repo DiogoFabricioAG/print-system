@@ -82,8 +82,6 @@ class Config:
     api_url: str
     api_key: str
     watch_folder: Path | None = None
-    additional_watch_folders: list[Path] = field(default_factory=list)
-    block_web_downloads: bool = True
     separator: str = " - "
     gui_enabled: bool = True
     max_retries: int = 5
@@ -99,8 +97,8 @@ class Config:
 
     @property
     def entrada(self) -> Path:
-        """Carpeta monitoreada: WATCH_FOLDER o <WATCH_ROOT>/entrada por defecto."""
-        return self.watch_folder or (self.watch_root / "entrada")
+        """Única carpeta monitoreada: WATCH_FOLDER o <WATCH_ROOT>/RIP."""
+        return self.watch_folder or (self.watch_root / "RIP")
 
     @property
     def procesados(self) -> Path:
@@ -165,12 +163,6 @@ def load_config(require_api_key: bool = True) -> Config:
                 aliases[key.strip().lower()] = value.strip()
 
     watch_folder_raw = (os.environ.get("WATCH_FOLDER") or "").strip()
-    additional_folders_raw = os.environ.get("ADDITIONAL_WATCH_FOLDERS", "")
-    additional_folders = [
-        Path(folder.strip().strip('"').strip("'"))
-        for folder in additional_folders_raw.split(";")
-        if folder.strip().strip('"').strip("'")
-    ]
 
     separator = os.environ.get("SEPARATOR") or " - "
     if any(char in separator for char in '<>:"/\\|?*'):
@@ -187,8 +179,6 @@ def load_config(require_api_key: bool = True) -> Config:
         ).rstrip("/"),
         api_key=api_key,
         watch_folder=Path(watch_folder_raw) if watch_folder_raw else None,
-        additional_watch_folders=additional_folders,
-        block_web_downloads=_env_bool("BLOCK_WEB_DOWNLOADS", True),
         separator=separator,
         gui_enabled=_env_bool("GUI_ENABLED", True),
         max_retries=_env_int("MAX_RETRIES", 5),
